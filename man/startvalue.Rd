@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{startvalue}
 \alias{startvalue}
-\title{startvalue}
+\title{Start value for maternal allele and haplotype frequencies}
 \usage{
 startvalue(Fam1, Fam2, Dd = 0, prec = 1e-06)
 }

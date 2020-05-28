@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{makehaplist}
 \alias{makehaplist}
-\title{makehaplist}
+\title{Make list of sire haplotypes}
 \usage{
 makehaplist(daughterSire, hapSire, nmin = 1)
 }
@@ -24,7 +24,8 @@ hap list (LEN 2) of lists. For each sire:
 }
 }
 \description{
-Make list of sire haplotypes required by hsrecombi
+List of sire haplotypes is set up in the format required for
+  hsrecombi. Haplotypes (obtained by external software) are provided.
 }
 \examples{
   data(targetregion)

@@ -2,12 +2,12 @@
 % Please edit documentation in R/functions.R
 \name{editraw}
 \alias{editraw}
-\title{editraw}
+\title{Editing results of hsrecombi}
 \usage{
 editraw(Roh, map1)
 }
 \arguments{
-\item{Roh}{list of raw results from hsrecombi}
+\item{Roh}{list of raw results from \code{hsrecombi}}
 
 \item{map1}{data.frame containing information on physical map, at least:
 \describe{

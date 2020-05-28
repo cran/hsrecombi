@@ -2,7 +2,7 @@
 % Please edit documentation in R/hsrecombi.R
 \name{hsrecombi}
 \alias{hsrecombi}
-\title{hsrecombi}
+\title{Estimation of recombination rate and maternal LD}
 \usage{
 hsrecombi(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-06)
 }
@@ -57,7 +57,9 @@ list (LEN p - 1) of data.frames; for each SNP, parameters are
   \code{editraw}, yielding the final estimates for each valid pair of SNPs.
 }
 \description{
-Estimation of recombination rate and maternal LD
+Wrapper function for estimating recombination rate and maternal
+  linkage disequilibrium between intra-chromosomal SNP pairs by calling EM
+  algorithm
 }
 \details{
 Paternal recombination rate and maternal linkage disequilibrium (LD)

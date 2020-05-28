@@ -1,5 +1,7 @@
-#' @title makehaplist
-#' @description Make list of sire haplotypes required by hsrecombi
+#' @title Make list of sire haplotypes
+#' @name makehaplist
+#' @description List of sire haplotypes is set up in the format required for
+#'   hsrecombi. Haplotypes (obtained by external software) are provided.
 #' @param daughterSire vector (LEN n) of sire ID for each progeny
 #' @param hapSire matrix (DIM 2N x p + 1) of sire haplotype at p SNPs; 2 lines
 #'  per sire, 1. columns contains sire ID
@@ -34,10 +36,11 @@ makehaplist <- function(daughterSire, hapSire, nmin = 1){
 }
 
 
-#' @title makehap
-#' @description Imputation of sire haplotypes (optional)
-#' @details Sire haplotypes are imputed from progeny genotypes using R package
-#'   \code{hsphase}.
+#' @title Make list of imputed sire haplotypes
+#' @name makehap
+#' @description List of sire haplotypes is set up in the format required for
+#'   hsrecombi. Sire haplotypes are imputed from progeny genotypes using R
+#'   package \code{hsphase}.
 #' @param sireID vector (LEN N) of IDs of all sires
 #' @param daughterSire vector (LEN n) of sire ID for each progeny
 #' @param genotype.chr matrix (DIM n x p) of progeny genotypes on a single
@@ -74,14 +77,92 @@ makehap <- function(sireID, daughterSire, genotype.chr, nmin = 30){
     if(length(hsID) >= nmin){
       genotype.chr.fam <- genotype.chr[hsID, ]
       ListFam[[as.character(i)]] <- hsID
-      ListHap[[as.character(i)]] <- ssp(bmh(genotype.chr.fam), genotype.chr.fam)
+
+      b <- NULL
+      try(b <- hsphase::bmh(genotype.chr.fam), silent = T)
+
+      if(is.null(b)){
+        ListHap[[as.character(i)]] <- matrix(9, nrow = 2, ncol = ncol(genotype.chr.fam))
+      } else{
+        ListHap[[as.character(i)]] <- hsphase::ssp(b, genotype.chr.fam)
+      }
+
     }
   }
   return(list(famID = ListFam, sireHap = ListHap))
 }
 
 
-#' @title startvalue
+#' @title Make list of imputed haplotypes and recombination rate
+#' @name makehappm
+#' @description List of sire haplotypes is set up in the format required for
+#'   hsrecombi. Sire haplotypes are imputed from progeny genotypes using R
+#'   package \code{hsphase}. Furthermore, recombination rate estimates between
+#'   adjacent SNPs from hsphase are reported.
+#' @param sireID vector (LEN N) of IDs of all sires
+#' @param daughterSire vector (LEN n) of sire ID for each progeny
+#' @param genotype.chr matrix (DIM n x p) of progeny genotypes on a single
+#'   chromosome with p SNPs
+#' @param nmin scalar, minimum number of progeny required, default 1
+#' @return hap list (LEN 2) of lists. For each sire:
+#' \describe{
+#'   \item{\code{famID}}{list (LEN N) of vectors (LEN n.progeny) of progeny
+#'    indices relating to lines in genotype matrix}
+#'   \item{\code{sireHap}}{list (LEN N) of matrices (DIM 2 x p) of sire
+#'    haplotypes (0, 1) on investigated chromosome}
+#'  \item{probRec}{vector (LEN p - 1) of proportion of recombinant progeny over
+#'    all families between adjacent SNPs}
+#'  \item{numberRec}{list (LEN N) of vectors (LEN n.progeny) of number of
+#'    recombination events per animal}
+#' }
+#' @examples
+#'   data(targetregion)
+#'   hap <- makehappm(unique(daughterSire), daughterSire, genotype.chr)
+#' @references
+#'  Ferdosi, M., Kinghorn, B., van der Werf, J., Lee, S. & Gondro, C. (2014)
+#'   hsphase: an R package for pedigree reconstruction, detection of
+#'   recombination events, phasing and imputation of half-sib family groups
+#'   BMC Bioinformatics 15:172.
+#'   \url{https://CRAN.R-project.org/package=hsphase}
+#' @import hsphase
+#' @importFrom rlist list.rbind
+#' @export
+makehappm <- function(sireID, daughterSire, genotype.chr, nmin = 30){
+
+  ListFam <- ListHap <- ListPm <- ListRec <- list()
+
+  for (i in sireID){
+    # index of progeny
+    hsID <- which(daughterSire == i)
+
+    # filter only sufficiently large half-sib families
+    if(length(hsID) >= nmin){
+      genotype.chr.fam <- genotype.chr[hsID, ]
+      ListFam[[as.character(i)]] <- hsID
+
+      b <- NULL
+      try(b <- hsphase::bmh(genotype.chr.fam), silent = T)
+
+      if(is.null(b)){
+        ListHap[[as.character(i)]] <- matrix(9, nrow = 2, ncol = ncol(genotype.chr.fam))
+        ListPm[[as.character(i)]] <- matrix(NA, nrow = 1, ncol = ncol(genotype.chr.fam) - 1)
+        ListRec[[as.character(i)]] <- rep(NA, length(hsID))
+      } else{
+        ListHap[[as.character(i)]] <- hsphase::ssp(b, genotype.chr.fam)
+        ListPm[[as.character(i)]] <- hsphase::pm(b, method = 'relative')
+        ListRec[[as.character(i)]] <- rowSums(ListPm[[as.character(i)]], na.rm = TRUE)
+      }
+    }
+    big <- rlist::list.rbind(ListPm)
+
+  }
+  return(list(famID = ListFam, sireHap = ListHap, probRec = colMeans(big, na.rm = TRUE), numberRec = ListRec))
+}
+
+
+
+#' @title Start value for maternal allele and haplotype frequencies
+#' @name startvalue
 #' @description Determine default start values for Expectation Maximisation (EM)
 #'  algorithm that is used to estimate paternal recombination rate and maternal
 #'  haplotype frequencies
@@ -142,10 +223,11 @@ startvalue <- function(Fam1, Fam2, Dd = 0, prec = 1e-6){
 }
 
 
-#' @title editraw
+#' @title Editing results of hsrecombi
+#' @name editraw
 #' @description Process raw results from \code{hsrecombi}, decide which out of
 #'   two sets of estimates is more likely and prepare list of final results
-#' @param Roh list of raw results from hsrecombi
+#' @param Roh list of raw results from \code{hsrecombi}
 #' @param map1 data.frame containing information on physical map, at least:
 #' \describe{
 #'  \item{\code{SNP}}{SNP ID}
@@ -260,3 +342,51 @@ editraw <- function(Roh, map1){
   return(binder)
 }
 
+
+#' @title Candidates for misplacement
+#' @name checkCandidates
+#' @description Search for SNPs with unusually large estimates of recombination
+#'   rate
+#' @details Markers with unusually large estimates of recombination rate to
+#'   close SNPs are candidates for misplacements in the underlying assembly. The
+#'   mean of recombination rate estimates with \code{win} subsequent or
+#'   preceeding markers is calculated and those SNPs with mean value exceeding
+#'   the \code{quant} quantile are denoted as candidates which have to be
+#'   manually curated!
+#'   This can be done, for instance, by visual inspection of a correlation plot
+#'   containing estimates of recombination rate in a selected region.
+#' @param final table of results produced by \code{editraw} with pairwise
+#'   estimates of recombination rate between p SNPs within chromosome; minimum
+#'   required data frame with columns \code{SNP1}, \code{SNP2} and \code{theta}
+#' @param win optional value for window size; default value 30
+#' @param quant optional value; default value 0.99, see details
+#' @return vector of SNP indices for further verification
+#' @examples
+#'   ### test data
+#'   data(targetregion)
+#'   ### make list for paternal half-sib families
+#'   hap <- makehaplist(daughterSire, hapSire)
+#'   ### parameter estimates on a chromosome
+#'   res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
+#'   ### pros-processing to achieve final and valid set of estimates
+#'   final <- editraw(res, map.chr)
+#'   ### check for candidates of misplacement
+#'   snp <- checkCandidates(final)
+#' @importFrom stats quantile
+#' @export
+checkCandidates <- function(final, win = 30, quant = 0.99){
+  p <- max(final$SNP2)
+  meanval <- c()
+  for (i in min(final$SNP1):(p - win)){
+    meanval[i] <- mean(final$theta[(final$SNP1 == i) & (final$SNP2 <= i + win)])
+  }
+
+  for (i in (p - win + 1):p) {
+    meanval[i] <- mean(final$theta[(final$SNP1 >= i - win) & (final$SNP2 == i)])
+  }
+
+  q <- quantile(meanval, prob = quant, na.rm = T)
+  cand <- which(meanval >= q)
+
+  return(cand)
+}

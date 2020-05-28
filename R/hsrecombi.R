@@ -1,5 +1,8 @@
-#' @title hsrecombi
-#' @description Estimation of recombination rate and maternal LD
+#' @title Estimation of recombination rate and maternal LD
+#' @name hsrecombi
+#' @description Wrapper function for estimating recombination rate and maternal
+#'   linkage disequilibrium between intra-chromosomal SNP pairs by calling EM
+#'   algorithm
 #' @details Paternal recombination rate and maternal linkage disequilibrium (LD)
 #'   are estimated for pairs of biallelic markers (such as single nucleotide
 #'   polymorphisms; SNPs) from progeny genotypes and sire haplotypes. At least
@@ -124,5 +127,70 @@ hsrecombi <- function(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-6)
     ls[[j]] <- data.frame(out)
   }
   return(ls)
+}
+
+
+
+#' @title Estimation of genetic position
+#' @name geneticPosition
+#' @description Estimation of genetic positions (in centi Morgan)
+#' @details Smoothing of recombination rates (theta) <= 0.05 via quadratic
+#'   optimization provides an approximation of genetic distances (in Morgan)
+#'   between SNPs. The cumulative sum * 100 yields the genetic positions in cM.
+#'
+#'   The minimization problem \code{(theta - D d)^2} is solved s.t. d > 0 where
+#'   d is the vector of genetic distances between adjacent markers but theta is
+#'   not restricted to adjacent markers. The incidence matrix D contains 1's for
+#'   those intervals contributing to the total distance relevant for each theta.
+#'
+#'   Estmates of theta = 1e-6 are neglected as these values coincide with start
+#'   values and indicate that (because of a very flat likelihood surface) no
+#'   meaningful estimate of recombination rate has been obtained.
+#' @param final table of results produced by \code{editraw} with pairwise
+#'   estimates of recombination rate between p SNPs within chromosome; minimum
+#'   required data frame with columns \code{SNP1}, \code{SNP2} and \code{theta}
+#' @param exclude optional vector (LEN q) of SNPs to be excluded (e.g.,
+#'   candidates of misplaced SNPs)
+#' @param threshold optional value; recombination rates <= threshold are
+#'   considered for smoothing
+#' @return vector (LEN p) of genetic positions of SNPs (in cM)
+#' @examples
+#'   ### test data
+#'   data(targetregion)
+#'   ### make list for paternal half-sib families
+#'   hap <- makehaplist(daughterSire, hapSire)
+#'   ### parameter estimates on a chromosome
+#'   res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
+#'   ### pros-processing to achieve final and valid set of estimates
+#'   final <- editraw(res, map.chr)
+#'   ### approximation of genetic positions
+#'   pos <- geneticPosition(final)
+#' @importFrom quadprog solve.QP
+#' @export
+geneticPosition <- function(final, exclude = NULL, threshold = 0.05){
+  part <- final[(final$theta <= threshold) & (final$theta >= 1e-5) &
+                  !(final$SNP1 %in% exclude) & !(final$SNP2 %in% exclude), ]
+  p <- max(part$SNP2) - min(part$SNP1) + 1
+
+  # quadratic optimization min(theta - D d)² s.t. d > 0
+  D <- matrix(0, ncol = p - 1, nrow = nrow(part))
+  for (i in 1:nrow(part)) {
+    D[i, (part$SNP1[i] - min(part$SNP1) + 1):(part$SNP2[i] - min(part$SNP1))] <- 1
+  }
+
+  # components for quadprog, make D p.d.
+  dvec <- crossprod(D, part$theta)
+  Amat <- diag(1, p - 1)
+  Dmat <- crossprod(D) + diag(1e-6, p - 1)
+
+  sln <- solve.QP(Dmat, dvec, Amat)
+  gen <- c(0, cumsum(sln$solution)) * 100
+
+  if(min(part$SNP1) > 1) gen <- c(rep(NA, min(part$SNP1) - 1), gen)
+  names(gen) <- 1:max(part$SNP2)
+  id <- unique(c(part$SNP1, part$SNP2))
+  gen[!(names(gen) %in% id)] <- NA
+
+  return(gen)
 }
 
