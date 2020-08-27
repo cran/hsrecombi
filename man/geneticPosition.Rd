@@ -44,7 +44,7 @@ Smoothing of recombination rates (theta) <= 0.05 via quadratic
   hap <- makehaplist(daughterSire, hapSire)
   ### parameter estimates on a chromosome
   res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
-  ### pros-processing to achieve final and valid set of estimates
+  ### post-processing to achieve final and valid set of estimates
   final <- editraw(res, map.chr)
   ### approximation of genetic positions
   pos <- geneticPosition(final)

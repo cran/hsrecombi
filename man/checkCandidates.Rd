@@ -39,7 +39,7 @@ Markers with unusually large estimates of recombination rate to
   hap <- makehaplist(daughterSire, hapSire)
   ### parameter estimates on a chromosome
   res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
-  ### pros-processing to achieve final and valid set of estimates
+  ### post-processing to achieve final and valid set of estimates
   final <- editraw(res, map.chr)
   ### check for candidates of misplacement
   snp <- checkCandidates(final)

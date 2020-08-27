@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="D. Wittenburg" />
+
+
+<title>Description of the workflow for constructing a genetic map using hsrecombi</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Description of the workflow for constructing a genetic map using <em>hsrecombi</em></h1>
+<h4 class="author">D. Wittenburg</h4>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p><em>hsrecombi</em> can approximate the genetic-map positions of genetic markers from SNP genotypes in half-sib families. It is referred to <a href="https://www.frontiersin.org/articles/10.3389/fgene.2018.00186">Hampel et al. (2018, Fron Gen)</a> and Qanbari &amp; Wittenburg (2020, submitted) for more information on the methodology. The workflow relies on paternal half-sib families but it can be adapted to maternal half-sib families with minor modifications.</p>
+<p>In <strong>Part I</strong>, genotypic data from progeny and their common parents are simulated with the R package <a href="https://CRAN.R-project.org/package=AlphaSimR"><em>AlphaSimR</em></a> and reshaped into the PLINK format. If genotypic data are already available in the required PLINK format, the workflow starts directly at <strong>Part II</strong>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(hsrecombi)
+<span class="kw">library</span>(AlphaSimR)
+<span class="co">#&gt; Loading required package: R6</span>
+<span class="kw">library</span>(doParallel)
+<span class="co">#&gt; Loading required package: foreach</span>
+<span class="co">#&gt; Loading required package: iterators</span>
+<span class="co">#&gt; Loading required package: parallel</span>
+<span class="kw">library</span>(ggplot2)
+<span class="kw">library</span>(rlist)
+<span class="kw">Sys.time</span>()
+<span class="co">#&gt; [1] &quot;2020-08-17 11:07:14 CEST&quot;</span></code></pre></div>
+<div id="global-variables" class="section level3">
+<h3>Global variables</h3>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Number of SNPs (e.g., p = 1500 resembles an average bovine chromosome)</span>
+p &lt;-<span class="st"> </span><span class="dv">150</span>
+<span class="co"># Number of progeny in each half-sib family</span>
+n &lt;-<span class="st"> </span><span class="dv">1000</span>
+<span class="co"># Directory for (simulated) data</span>
+path.dat &lt;-<span class="st"> &quot;data&quot;</span>
+<span class="kw">dir.create</span>(path.dat, <span class="dt">showWarnings =</span> <span class="ot">FALSE</span>)
+<span class="co"># Directory for output</span>
+path.res &lt;-<span class="st"> &quot;results&quot;</span>
+<span class="kw">dir.create</span>(path.res, <span class="dt">showWarnings =</span> <span class="ot">FALSE</span>)
+<span class="co"># Number of computing clusters allocated</span>
+nclust &lt;-<span class="st"> </span><span class="dv">2</span></code></pre></div>
+<p>For instance, executing the following workflow with <span class="math inline">\(p=1500\)</span> and <span class="math inline">\(n\geq 1000\)</span> requires about 120 Mb storage space and 10 min computing time (2.6 GHz processor). With <span class="math inline">\(p=150\)</span>, it takes about 7 Mb and 20 sec.</p>
+</div>
+</div>
+<div id="part-i-data-simulation-and-preparation" class="section level2">
+<h2>Part I: Data simulation and preparation</h2>
+<div id="simulation-of-genetic-data-with-r-package-alphasimr" class="section level3">
+<h3>1: Simulation of genetic data with R package <em>AlphaSimR</em></h3>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">founderPop &lt;-<span class="st"> </span><span class="kw">runMacs2</span>(<span class="dt">nInd =</span> <span class="dv">1000</span>, <span class="dt">nChr =</span> <span class="dv">2</span>, <span class="dt">segSites =</span> p)
+SP &lt;-<span class="st"> </span>SimParam$<span class="kw">new</span>(founderPop)
+SP$<span class="kw">setGender</span>(<span class="st">&quot;yes_sys&quot;</span>)
+<span class="co"># Enable tracing location of recombination events</span>
+SP$<span class="kw">setTrackRec</span>(<span class="ot">TRUE</span>)
+
+pop &lt;-<span class="st"> </span><span class="kw">newPop</span>(founderPop)
+N &lt;-<span class="st"> </span><span class="dv">10</span>
+ntotal &lt;-<span class="st"> </span>N *<span class="st"> </span>n
+my_pop &lt;-<span class="st"> </span><span class="kw">selectCross</span>(<span class="dt">pop =</span> pop, <span class="dt">nFemale =</span> <span class="dv">500</span>, <span class="dt">nMale =</span> N, <span class="dt">use =</span> <span class="st">&quot;rand&quot;</span>, <span class="dt">nCrosses =</span> ntotal)
+
+<span class="kw">save</span>(<span class="dt">list =</span> <span class="kw">c</span>(<span class="st">&quot;SP&quot;</span>, <span class="st">&quot;founderPop&quot;</span>, <span class="st">&quot;pop&quot;</span>, <span class="st">&quot;my_pop&quot;</span>, <span class="st">&quot;ntotal&quot;</span>), <span class="dt">file =</span> <span class="kw">file.path</span>(path.dat, <span class="st">&quot;pop.RData&quot;</span>))</code></pre></div>
+<p>Two chromosomes, each with <span class="math inline">\(p\)</span> SNPs and 1 Morgan length, are simulated. The founder population consists of 1,000 animals with equal gender distribution. The follow-up generation consists of <span class="math inline">\(N\)</span> paternal-half sib families with equal number of progeny <span class="math inline">\(n\)</span>. The study design with the equal number of progeny per family was preferred here for simplicity but this is not required in the subsequent steps.</p>
+</div>
+<div id="selection-of-sire-haplotypes-and-progeny-genotypes" class="section level3">
+<h3>2: Selection of sire haplotypes and progeny genotypes</h3>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">PAT &lt;-<span class="st"> </span>my_pop@father
+rown &lt;-<span class="st"> </span><span class="kw">paste</span>(<span class="kw">rep</span>(<span class="kw">unique</span>(PAT), <span class="dt">each =</span> <span class="dv">2</span>), <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">2</span>), <span class="dt">sep =</span> <span class="st">&quot;_&quot;</span>)
+H.pat &lt;-<span class="st"> </span><span class="kw">pullSegSiteHaplo</span>(pop)[rown, ]
+X &lt;-<span class="st"> </span><span class="kw">pullSegSiteGeno</span>(my_pop)
+<span class="co"># Physical position of markers in Mbp</span>
+map.snp &lt;-<span class="st"> </span><span class="kw">lapply</span>(founderPop@genMap, function(z) z *<span class="st"> </span><span class="dv">100</span>)</code></pre></div>
+<p>Note that <code>founderPop@genMap</code> includes genetic positions in Morgan units but physical positions are required in the next steps.</p>
+</div>
+<div id="reshaping-data-into-plink-format" class="section level3">
+<h3>3: Reshaping data into PLINK format</h3>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">map &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">Chr =</span> <span class="kw">rep</span>(<span class="dv">1</span>:<span class="kw">length</span>(map.snp), <span class="kw">unlist</span>(<span class="kw">lapply</span>(map.snp, length))), <span class="dt">Name =</span> <span class="kw">paste0</span>(<span class="st">&quot;SNP&quot;</span>, 
+    <span class="dv">1</span>:<span class="kw">length</span>(<span class="kw">unlist</span>(map.snp))), <span class="dt">locus_Mb =</span> <span class="kw">unlist</span>(map.snp), <span class="dt">locus_bp =</span> <span class="kw">unlist</span>(map.snp) *<span class="st"> </span><span class="fl">1e+06</span>)
+
+<span class="kw">colnames</span>(X) &lt;-<span class="st"> </span>map$Name
+FID &lt;-<span class="st"> &quot;FAM001&quot;</span>
+IID &lt;-<span class="st"> </span>my_pop@id
+MAT &lt;-<span class="st"> </span>my_pop@mother
+SEX &lt;-<span class="st"> </span><span class="dv">2</span>
+PHENOTYPE &lt;-<span class="st"> </span>-<span class="dv">9</span>
+
+for (chr in <span class="dv">1</span>:<span class="dv">2</span>) {
+    <span class="kw">write.table</span>(map[map$Chr ==<span class="st"> </span>chr, ], <span class="kw">file.path</span>(path.dat, <span class="kw">paste0</span>(<span class="st">&quot;map&quot;</span>, chr, <span class="st">&quot;.map&quot;</span>)), <span class="dt">col.names =</span> F, 
+        <span class="dt">row.names =</span> F, <span class="dt">quote =</span> F)
+    <span class="kw">write.table</span>(<span class="kw">cbind</span>(FID, IID, PAT, MAT, SEX, PHENOTYPE, X[, map$Chr ==<span class="st"> </span>chr]), <span class="kw">file.path</span>(path.dat, <span class="kw">paste0</span>(<span class="st">&quot;hsphase_input&quot;</span>, 
+        chr, <span class="st">&quot;.raw&quot;</span>)), <span class="dt">col.names =</span> T, <span class="dt">row.names =</span> F, <span class="dt">quote =</span> F)
+}</code></pre></div>
+</div>
+</div>
+<div id="part-ii-main-analysis" class="section level2">
+<h2>Part II: Main analysis</h2>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">cl &lt;-<span class="st"> </span><span class="kw">makeCluster</span>(nclust)
+<span class="kw">registerDoParallel</span>(cl)</code></pre></div>
+<div id="steps-1-5-calculation-of-pairwise-recombination-rates" class="section level3">
+<h3>Steps 1-5: Calculation of pairwise recombination rates</h3>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out &lt;-<span class="st"> </span><span class="kw">foreach</span>(<span class="dt">chr =</span> <span class="dv">1</span>:<span class="dv">2</span>, <span class="dt">.packages =</span> <span class="st">&quot;hsrecombi&quot;</span>) %dopar%<span class="st"> </span>{
+    
+    <span class="co"># 1: Physical map</span>
+    map &lt;-<span class="st"> </span><span class="kw">read.table</span>(<span class="kw">file.path</span>(path.dat, <span class="kw">paste0</span>(<span class="st">&quot;map&quot;</span>, chr, <span class="st">&quot;.map&quot;</span>)), <span class="dt">col.names =</span> <span class="kw">c</span>(<span class="st">&quot;Chr&quot;</span>, <span class="st">&quot;Name&quot;</span>, <span class="st">&quot;locus_Mb&quot;</span>, 
+        <span class="st">&quot;locus_bp&quot;</span>))
+    map$SNP &lt;-<span class="st"> </span><span class="dv">1</span>:<span class="kw">nrow</span>(map)
+    locus_Mb &lt;-<span class="st"> </span>map$locus_Mb
+    
+    <span class="co"># 2: Genotype matrix</span>
+    genomatrix &lt;-<span class="st"> </span>data.table::<span class="kw">fread</span>(<span class="kw">file.path</span>(path.dat, <span class="kw">paste0</span>(<span class="st">&quot;hsphase_input&quot;</span>, chr, <span class="st">&quot;.raw&quot;</span>)))
+    X &lt;-<span class="st"> </span><span class="kw">as.matrix</span>(genomatrix[, -<span class="kw">c</span>(<span class="dv">1</span>:<span class="dv">6</span>)])
+    
+    <span class="co"># 3: Assign daughters to sire IDs</span>
+    daughterSire &lt;-<span class="st"> </span>genomatrix$PAT
+    
+    <span class="co"># 4: Estimate sire haplotypes and format data</span>
+    hap &lt;-<span class="st"> </span><span class="kw">makehappm</span>(<span class="kw">unique</span>(daughterSire), daughterSire, X)
+    <span class="kw">save</span>(<span class="st">&quot;hap&quot;</span>, <span class="dt">file =</span> <span class="kw">file.path</span>(path.res, <span class="kw">paste0</span>(<span class="st">&quot;hsphase_output_chr&quot;</span>, chr, <span class="st">&quot;.Rdata&quot;</span>)))
+    
+    <span class="co"># Check order and dimension</span>
+    io &lt;-<span class="st"> </span><span class="kw">sapply</span>(<span class="dv">1</span>:<span class="kw">nrow</span>(map), function(z) {
+        <span class="kw">grepl</span>(<span class="dt">x =</span> <span class="kw">colnames</span>(X)[z], <span class="dt">pattern =</span> map$Name[z])
+    })
+    if (<span class="kw">sum</span>(io) !=<span class="st"> </span><span class="kw">nrow</span>(map)) 
+        <span class="kw">stop</span>(<span class="st">&quot;ERROR in dimension&quot;</span>)
+    
+    <span class="co"># 5: Estimate recombination rates</span>
+    res &lt;-<span class="st"> </span><span class="kw">hsrecombi</span>(hap, X, map$SNP)
+    final &lt;-<span class="st"> </span><span class="kw">editraw</span>(res, map)
+    <span class="kw">save</span>(<span class="dt">list =</span> <span class="kw">c</span>(<span class="st">&quot;final&quot;</span>, <span class="st">&quot;locus_Mb&quot;</span>), <span class="dt">file =</span> <span class="kw">file.path</span>(path.res, <span class="kw">paste0</span>(<span class="st">&quot;Results_chr&quot;</span>, chr, <span class="st">&quot;.RData&quot;</span>)))
+    
+    <span class="kw">ifelse</span>(<span class="kw">nrow</span>(final) &gt;<span class="st"> </span><span class="dv">0</span>, <span class="st">&quot;OK&quot;</span>, <span class="st">&quot;no result&quot;</span>)
+}
+<span class="kw">print</span>(<span class="kw">which</span>(<span class="kw">unlist</span>(out) ==<span class="st"> &quot;OK&quot;</span>))
+<span class="co">#&gt; [1] 1 2</span></code></pre></div>
+<p>In step 4, function <code>makehap</code> would be sufficient but <code>makehappm</code> allows comparison with a deterministic approach shown later.</p>
+</div>
+<div id="check-for-candidates-of-misplacement" class="section level3">
+<h3>6: Check for candidates of misplacement</h3>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># 6a: Filter SNPs with unusually large recombination rate to neighbouring (30) SNPs</span>
+excl &lt;-<span class="st"> </span><span class="kw">foreach</span>(<span class="dt">chr =</span> <span class="dv">1</span>:<span class="dv">2</span>, <span class="dt">.packages =</span> <span class="st">&quot;hsrecombi&quot;</span>) %dopar%<span class="st"> </span>{
+    <span class="kw">load</span>(<span class="kw">file.path</span>(path.res, <span class="kw">paste0</span>(<span class="st">&quot;Results_chr&quot;</span>, chr, <span class="st">&quot;.RData&quot;</span>)))
+    <span class="kw">checkCandidates</span>(final)
+}
+
+<span class="co"># 6b: Heatmap plot of recombination rates for visual verification, e.g.:</span>
+chr &lt;-<span class="st"> </span><span class="dv">2</span>
+<span class="kw">load</span>(<span class="kw">file.path</span>(path.res, <span class="kw">paste0</span>(<span class="st">&quot;Results_chr&quot;</span>, chr, <span class="st">&quot;.RData&quot;</span>)))
+cand &lt;-<span class="st"> </span>excl[[chr]][<span class="dv">1</span>]
+win &lt;-<span class="st"> </span>cand +<span class="st"> </span>(-<span class="dv">100</span>:<span class="dv">100</span>)
+win &lt;-<span class="st"> </span>win[(win &gt;=<span class="st"> </span><span class="dv">1</span>) &amp;<span class="st"> </span>(win &lt;=<span class="st"> </span><span class="kw">max</span>(final$SNP2))]
+
+target &lt;-<span class="st"> </span>final[(final$SNP1 %in%<span class="st"> </span>win) &amp;<span class="st"> </span>(final$SNP2 %in%<span class="st"> </span>win), ]
+
+<span class="kw">ggplot</span>(<span class="dt">data =</span> target, <span class="kw">aes</span>(SNP2, SNP1, <span class="dt">fill =</span> theta)) +<span class="st"> </span><span class="kw">geom_tile</span>() +<span class="st"> </span><span class="kw">xlab</span>(<span class="st">&quot;Locus 2&quot;</span>) +<span class="st"> </span><span class="kw">ylab</span>(<span class="st">&quot;Locus 1&quot;</span>) +<span class="st"> </span>
+<span class="st">    </span><span class="kw">coord_equal</span>() +<span class="st"> </span><span class="kw">scale_y_continuous</span>(<span class="dt">trans =</span> <span class="st">&quot;reverse&quot;</span>) +<span class="st"> </span><span class="kw">theme</span>(<span class="dt">panel.background =</span> <span class="kw">element_blank</span>(), 
+    <span class="dt">panel.grid.major =</span> <span class="kw">element_line</span>(<span class="dt">colour =</span> <span class="st">&quot;grey&quot;</span>, <span class="dt">size =</span> <span class="fl">0.1</span>), <span class="dt">panel.grid.minor =</span> <span class="kw">element_line</span>(<span class="dt">colour =</span> <span class="st">&quot;grey&quot;</span>)) +<span class="st"> </span>
+<span class="st">    </span><span class="kw">theme</span>(<span class="dt">text =</span> <span class="kw">element_text</span>(<span class="dt">size =</span> <span class="dv">18</span>)) +<span class="st"> </span><span class="kw">scale_fill_gradientn</span>(<span class="dt">colours =</span> <span class="kw">c</span>(<span class="st">&quot;yellow&quot;</span>, <span class="st">&quot;red&quot;</span>), <span class="dt">limits =</span> <span class="kw">c</span>(<span class="dv">0</span>, 
+    <span class="dv">1</span> +<span class="st"> </span><span class="fl">1e-10</span>), <span class="dt">na.value =</span> <span class="st">&quot;white&quot;</span>)</code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># -&gt; nothing conspicious</span>
+
+excl[[<span class="dv">1</span>]] &lt;-<span class="st"> </span>excl[[<span class="dv">2</span>]] &lt;-<span class="st"> </span><span class="ot">NA</span></code></pre></div>
+<p>Orange colour in the SNP neighbourhood implies an increased recombination rate. In case of a misplaced marker or a cluster of misplaced markers, the heatmap is characterised by an orange band.</p>
+</div>
+<div id="approximation-of-genetic-positions" class="section level3">
+<h3>7: Approximation of genetic positions</h3>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pos &lt;-<span class="st"> </span><span class="kw">foreach</span>(<span class="dt">chr =</span> <span class="dv">1</span>:<span class="dv">2</span>, <span class="dt">.packages =</span> <span class="st">&quot;hsrecombi&quot;</span>) %dopar%<span class="st"> </span>{
+    <span class="kw">load</span>(<span class="kw">file.path</span>(path.res, <span class="kw">paste0</span>(<span class="st">&quot;Results_chr&quot;</span>, chr, <span class="st">&quot;.RData&quot;</span>)))
+    out &lt;-<span class="st"> </span><span class="kw">geneticPosition</span>(final, <span class="dt">exclude =</span> excl[[chr]])
+    <span class="kw">list</span>(<span class="dt">pos.cM =</span> <span class="kw">c</span>(out, <span class="kw">rep</span>(<span class="ot">NA</span>, <span class="kw">length</span>(locus_Mb) -<span class="st"> </span><span class="kw">length</span>(out))), <span class="dt">pos.Mb =</span> locus_Mb)
+}</code></pre></div>
+<p>Genetic position is reported as NA if the corresponding SNP has not been considered in the analysis (e.g., when no sire was heterozygous at the corresponding SNP).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">stopCluster</span>(cl)</code></pre></div>
+</div>
+<div id="plot-of-physical-versus-genetic-map-positions" class="section level3">
+<h3>8: Plot of physical versus genetic-map positions</h3>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">data &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">Chr =</span> <span class="kw">rep</span>(<span class="dv">1</span>:<span class="kw">length</span>(pos), <span class="dt">times =</span> <span class="kw">unlist</span>(<span class="kw">list.select</span>(pos, <span class="kw">length</span>(pos.Mb)))), <span class="dt">Mbp =</span> <span class="kw">unlist</span>(<span class="kw">list.select</span>(pos, 
+    pos.Mb)), <span class="dt">cM =</span> <span class="kw">unlist</span>(<span class="kw">list.select</span>(pos, pos.cM)))
+<span class="kw">ggplot</span>(data, <span class="kw">aes</span>(<span class="dt">x =</span> Mbp, <span class="dt">y =</span> cM)) +<span class="st"> </span><span class="kw">geom_point</span>(<span class="dt">na.rm =</span> T) +<span class="st"> </span><span class="kw">facet_grid</span>(Chr ~<span class="st"> </span>.)</code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+</div>
+</div>
+<div id="part-iii-visual-comparison-with-simulated-data-and-deterministic-approach" class="section level2">
+<h2>Part III: Visual comparison with simulated data and deterministic approach</h2>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">chr &lt;-<span class="st"> </span><span class="dv">2</span></code></pre></div>
+<div id="check-with-simulated-data" class="section level3">
+<h3>1: Check with simulated data</h3>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">load</span>(<span class="kw">file.path</span>(path.dat, <span class="st">&quot;pop.RData&quot;</span>))
+co.pat &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="dv">0</span>, <span class="dt">ncol =</span> p, <span class="dt">nrow =</span> ntotal)
+for (i in <span class="dv">1</span>:ntotal) {
+    if (<span class="kw">nrow</span>(SP$recHist[[<span class="dv">1000</span> +<span class="st"> </span>i]][[chr]][[<span class="dv">2</span>]]) &gt;<span class="st"> </span><span class="dv">1</span>) {
+        <span class="co"># 1. line contains 1 1 by default</span>
+        loci &lt;-<span class="st"> </span>SP$recHist[[<span class="dv">1000</span> +<span class="st"> </span>i]][[chr]][[<span class="dv">2</span>]][-<span class="dv">1</span>, <span class="dv">2</span>]
+        co.pat[i, loci] &lt;-<span class="st"> </span><span class="dv">1</span>
+    }
+}
+probRec &lt;-<span class="st"> </span><span class="kw">colMeans</span>(co.pat)
+sim.cM &lt;-<span class="st"> </span><span class="kw">cumsum</span>(probRec) *<span class="st"> </span><span class="dv">100</span></code></pre></div>
+<p>The position of a recombination event is traced in <code>SP$recHist</code> which has a nested list structure (individual, chromosome, female/male haplotype). The recombination rate between adjacent SNPs is determined as the proportion of recombinant progeny and the positions are derived as cumulative sum over recombination rates.</p>
+</div>
+<div id="check-with-deterministic-approach" class="section level3">
+<h3>2: Check with deterministic approach</h3>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">load</span>(<span class="kw">file.path</span>(path.res, <span class="kw">paste0</span>(<span class="st">&quot;hsphase_output_chr&quot;</span>, chr, <span class="st">&quot;.Rdata&quot;</span>)))
+hsphase.cM &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="kw">cumsum</span>(hap$probRec)) *<span class="st"> </span><span class="dv">100</span></code></pre></div>
+<p>The results are compared to the deterministic approach of <a href="https://doi.org/10.1186/1297-9686-46-11">Ferdosi et al. (2014)</a> provided in the R package <a href="https://CRAN.R-project.org/package=hsphase"><em>hsphase</em></a>. Functions of that package are called in <code>makehap</code> and <code>makehappm</code>.</p>
+</div>
+<div id="comparative-plot-of-physical-versus-genetic-map-positions" class="section level3">
+<h3>3: Comparative plot of physical versus genetic-map positions</h3>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">par</span>(<span class="dt">mar =</span> <span class="kw">c</span>(<span class="fl">5.1</span>, <span class="fl">4.1</span>, <span class="fl">4.1</span>, <span class="fl">9.1</span>), <span class="dt">xpd =</span> <span class="ot">TRUE</span>)
+<span class="kw">plot</span>(pos[[chr]]$pos.Mb, pos[[chr]]$pos.cM, <span class="dt">xlab =</span> <span class="st">&quot;physical position (Mbp)&quot;</span>, <span class="dt">ylab =</span> <span class="st">&quot;genetic position (cM)&quot;</span>, 
+    <span class="dt">ylim =</span> <span class="kw">range</span>(<span class="kw">c</span>(sim.cM, hsphase.cM, pos[[chr]]$pos.cM), <span class="dt">na.rm =</span> T), <span class="dt">pch =</span> <span class="dv">20</span>)
+<span class="kw">points</span>(pos[[chr]]$pos.Mb, sim.cM, <span class="dt">pch =</span> <span class="dv">20</span>, <span class="dt">col =</span> <span class="dv">4</span>)
+<span class="kw">points</span>(pos[[chr]]$pos.Mb, hsphase.cM, <span class="dt">pch =</span> <span class="dv">20</span>, <span class="dt">col =</span> <span class="dv">8</span>)
+<span class="kw">legend</span>(<span class="st">&quot;topleft&quot;</span>, <span class="dt">inset =</span> <span class="kw">c</span>(<span class="fl">1.01</span>, <span class="dv">0</span>), <span class="dt">legend =</span> <span class="kw">c</span>(<span class="st">&quot;simulated&quot;</span>, <span class="st">&quot;deterministic&quot;</span>, <span class="st">&quot;likelihood-based&quot;</span>), <span class="dt">pch =</span> <span class="dv">20</span>, 
+    <span class="dt">col =</span> <span class="kw">c</span>(<span class="dv">4</span>, <span class="dv">8</span>, <span class="dv">1</span>), <span class="dt">bty =</span> <span class="st">&quot;n&quot;</span>)</code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --> The likelihood-based approach requires a sufficiently large sample size if SNP density is high. A verification of the bias of genetic-map positions can be found in the Supplemental Material of Qanbari &amp; Wittenburg (2020, submitted).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">unlink</span>(path.dat, <span class="dt">recursive =</span> <span class="ot">TRUE</span>)
+<span class="kw">unlink</span>(path.res, <span class="dt">recursive =</span> <span class="ot">TRUE</span>)
+<span class="kw">Sys.time</span>()
+<span class="co">#&gt; [1] &quot;2020-08-17 11:07:32 CEST&quot;</span></code></pre></div>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

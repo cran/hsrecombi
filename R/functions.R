@@ -266,7 +266,7 @@ startvalue <- function(Fam1, Fam2, Dd = 0, prec = 1e-6){
 #'   hap <- makehaplist(daughterSire, hapSire)
 #'   ### parameter estimates on a chromosome
 #'   res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
-#'   ### pros-processing to achieve final and valid set of estimates
+#'   ### post-processing to achieve final and valid set of estimates
 #'   final <- editraw(res, map.chr)
 #' @importFrom dplyr select starts_with
 #' @importFrom data.table rbindlist
@@ -368,7 +368,7 @@ editraw <- function(Roh, map1){
 #'   hap <- makehaplist(daughterSire, hapSire)
 #'   ### parameter estimates on a chromosome
 #'   res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
-#'   ### pros-processing to achieve final and valid set of estimates
+#'   ### post-processing to achieve final and valid set of estimates
 #'   final <- editraw(res, map.chr)
 #'   ### check for candidates of misplacement
 #'   snp <- checkCandidates(final)

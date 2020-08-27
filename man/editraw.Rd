@@ -54,6 +54,6 @@ Process raw results from \code{hsrecombi}, decide which out of
   hap <- makehaplist(daughterSire, hapSire)
   ### parameter estimates on a chromosome
   res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
-  ### pros-processing to achieve final and valid set of estimates
+  ### post-processing to achieve final and valid set of estimates
   final <- editraw(res, map.chr)
 }

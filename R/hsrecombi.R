@@ -62,7 +62,7 @@
 #'   hap <- makehaplist(daughterSire, hapSire)
 #'   ### parameter estimates on a chromosome
 #'   res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
-#'   ### pros-processing to achieve final and valid set of estimates
+#'   ### post-processing to achieve final and valid set of estimates
 #'   final <- editraw(res, map.chr)
 #' @references
 #'   Hampel, A., Teuscher, F., Gomez-Raya, L., Doschoris, M. & Wittenburg, D.
@@ -161,7 +161,7 @@ hsrecombi <- function(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-6)
 #'   hap <- makehaplist(daughterSire, hapSire)
 #'   ### parameter estimates on a chromosome
 #'   res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
-#'   ### pros-processing to achieve final and valid set of estimates
+#'   ### post-processing to achieve final and valid set of estimates
 #'   final <- editraw(res, map.chr)
 #'   ### approximation of genetic positions
 #'   pos <- geneticPosition(final)
