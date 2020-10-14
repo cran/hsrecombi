@@ -1,6 +1,6 @@
-9e194e924c562bb5a64865c138a21f15 *DESCRIPTION
+f02d73a00d6c2a358a2fd9f0a954baf1 *DESCRIPTION
 be597d2a2682e010580aaa33f1983036 *NAMESPACE
-b44b5e5fd0045b1aff37e275a2819e4b *NEWS.md
+bc40bca1e0efd25b4da4c0712a96804e *NEWS.md
 342544457338ebb2cbe4a07612f9ccca *R/RcppExports.R
 ab5035e972ad48cd475f17b06fe106a2 *R/daughterSire.R
 a7d2fc77dc44a7a470469a3d8629684e *R/functions.R
@@ -11,9 +11,9 @@ a7d2fc77dc44a7a470469a3d8629684e *R/functions.R
 3ba22e6e9ae4dd44db4d08c84832734b *R/targetregion.R
 5559eba371d42f5df00dddf7d56d686b *build/vignette.rds
 3680078c5818a563f0bd24e35b5c07e6 *data/targetregion.RData
-29ae9f601c08ee87cc03ec0a0264e380 *inst/doc/hsrecombi_workflow.R
-49dd574a85d015c2575d244980dbb198 *inst/doc/hsrecombi_workflow.Rmd
-6616aa5b30a738f362c8c294ade49653 *inst/doc/hsrecombi_workflow.html
+6f6fea2b94fb7915a7403a145c717319 *inst/doc/hsrecombi_workflow.R
+0eab55a51f8c8426d1caeea254c83997 *inst/doc/hsrecombi_workflow.Rmd
+f6c8c801f213d394fca894530ae644bc *inst/doc/hsrecombi_workflow.html
 2b4a4ae90b0747dca356769479f33740 *man/LDHScpp.Rd
 72873d06b4844fdb1caa3fd5fbff9395 *man/checkCandidates.Rd
 baec9f4e435269fffe85fe0a3328e1f3 *man/countNumbers.Rd
@@ -32,4 +32,4 @@ ca146528271c0def4f6f3ac04678993a *man/hsrecombi.Rd
 ba84bd863f64bee2f342f2da1517a663 *man/targetregion.Rd
 85d5abb7b849a6c880e6d574c1ca24ec *src/LDHSc.cpp
 53eca69f57b0ef8d6ad555f341ab87ba *src/RcppExports.cpp
-49dd574a85d015c2575d244980dbb198 *vignettes/hsrecombi_workflow.Rmd
+0eab55a51f8c8426d1caeea254c83997 *vignettes/hsrecombi_workflow.Rmd

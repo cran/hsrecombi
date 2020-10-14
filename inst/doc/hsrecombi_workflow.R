@@ -31,7 +31,7 @@ nclust <- 2
 ## ----alphasim-----------------------------------------------------------------
 founderPop <- runMacs2(nInd = 1000, nChr = 2, segSites = p)
 SP <- SimParam$new(founderPop)
-SP$setGender("yes_sys")
+SP$setSexes("yes_sys")
 # Enable tracing location of recombination events
 SP$setTrackRec(TRUE)  
 

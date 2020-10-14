@@ -23,6 +23,11 @@ knitr::opts_chunk$set(
 
 In **Part I**, genotypic data from progeny and their common parents are simulated with the R package [*AlphaSimR*](https://CRAN.R-project.org/package=AlphaSimR) and reshaped into the PLINK format. If genotypic data are already available in the required PLINK format, the workflow starts directly at **Part II**. 
 
+Required input files:
+
+* map files for each chromosome `map<chr>.map`
+* data files for each chromosome `hsphase_input<chr>.raw`
+
 ```{r setup}
 library(hsrecombi) 
 library(AlphaSimR)
@@ -56,7 +61,7 @@ For instance, executing the following workflow with $p=1500$ and $n\geq 1000$ re
 ```{r alphasim}
 founderPop <- runMacs2(nInd = 1000, nChr = 2, segSites = p)
 SP <- SimParam$new(founderPop)
-SP$setGender("yes_sys")
+SP$setSexes("yes_sys")
 # Enable tracing location of recombination events
 SP$setTrackRec(TRUE)  
 
@@ -144,7 +149,7 @@ out <- foreach(chr = 1:2, .packages = 'hsrecombi') %dopar% {
 print(which(unlist(out) == 'OK'))
 ```
 
-In step 4, function `makehap` would be sufficient but `makehappm` allows comparison with a deterministic approach shown later.
+In step 4, function `makehap` would be sufficient but `makehappm` allows comparison with a deterministic approach shown later. Note that sire haplotypes can also be obtained by some other (external) software. Then sire haplotypes and sire-to-daughter information need to be reshaped with `makehaplist` in step 4.
 
 ### 6: Check for candidates of misplacement
 ```{r misplaced}

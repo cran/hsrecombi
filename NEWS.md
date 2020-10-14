@@ -1,3 +1,7 @@
+# hsrecombi 0.3.2
+
+* update vignette
+
 # hsrecombi 0.3.1
 
 * vignette describing the workflow
@@ -5,7 +9,7 @@
 # hsrecombi 0.3.0
 
 * new feature for detecting candidates of misplacement in the underlying genome 
-  assembly
+   assembly
 
 # hsrecombi 0.2.0
 
