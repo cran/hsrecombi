@@ -4,7 +4,9 @@
 \name{daughterSire}
 \alias{daughterSire}
 \title{targetregion: allocation of paternal half-sib families}
-\format{An object of class \code{integer} of length 265.}
+\format{
+An object of class \code{integer} of length 265.
+}
 \usage{
 daughterSire
 }

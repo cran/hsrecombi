@@ -1,3 +1,9 @@
+# hsrecombi 0.3.3
+
+* minor bug fixes
+* update of references
+* link to makefile at github in DESCRIPTION and vignette
+
 # hsrecombi 0.3.2
 
 * update vignette

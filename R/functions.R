@@ -153,9 +153,8 @@ makehappm <- function(sireID, daughterSire, genotype.chr, nmin = 30){
         ListRec[[as.character(i)]] <- rowSums(ListPm[[as.character(i)]], na.rm = TRUE)
       }
     }
-    big <- rlist::list.rbind(ListPm)
-
   }
+  big <- rlist::list.rbind(ListPm)
   return(list(famID = ListFam, sireHap = ListHap, probRec = colMeans(big, na.rm = TRUE), numberRec = ListRec))
 }
 
@@ -372,6 +371,11 @@ editraw <- function(Roh, map1){
 #'   final <- editraw(res, map.chr)
 #'   ### check for candidates of misplacement
 #'   snp <- checkCandidates(final)
+#' @references
+#'   Hampel, A., Teuscher, F., Gomez-Raya, L., Doschoris, M. & Wittenburg, D.
+#'    (2018) Estimation of recombination rate and maternal linkage
+#'    disequilibrium in half-sibs. Frontiers in Genetics 9:186.
+#'    \doi{10.3389/fgene.2018.00186}
 #' @importFrom stats quantile
 #' @export
 checkCandidates <- function(final, win = 30, quant = 0.99){

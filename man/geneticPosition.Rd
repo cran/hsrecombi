@@ -49,3 +49,8 @@ Smoothing of recombination rates (theta) <= 0.05 via quadratic
   ### approximation of genetic positions
   pos <- geneticPosition(final)
 }
+\references{
+Qanbari, S. & Wittenburg, D. (2020) Male recombination map of the autosomal
+ genome in German Holstein. Genetics Selection Evolution 52:73.
+ \doi{10.1186/s12711-020-00593-z}
+}

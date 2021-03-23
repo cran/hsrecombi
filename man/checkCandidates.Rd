@@ -44,3 +44,9 @@ Markers with unusually large estimates of recombination rate to
   ### check for candidates of misplacement
   snp <- checkCandidates(final)
 }
+\references{
+Hampel, A., Teuscher, F., Gomez-Raya, L., Doschoris, M. & Wittenburg, D.
+   (2018) Estimation of recombination rate and maternal linkage
+   disequilibrium in half-sibs. Frontiers in Genetics 9:186.
+   \doi{10.3389/fgene.2018.00186}
+}

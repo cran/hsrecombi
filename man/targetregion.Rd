@@ -5,8 +5,8 @@
 \alias{targetregion}
 \title{Description of the targetregion data set}
 \source{
-The data are available from the RADAR repository
-  \url{https://dx.doi.org/10.22000/280}
+The data are available at RADAR
+  \doi{10.22000/280}
 }
 \description{
 The data set contains sire haplotypes, assignment of progeny to
@@ -23,15 +23,21 @@ The data set contains sire haplotypes, assignment of progeny to
 }
 }
 \examples{
-\donttest{
+\dontrun{
+# download data from RADAR (requires about 1.4 GB)
+url <- "https://www.radar-service.eu/radar-backend/archives/fqSPQoIvjtOGJlav/versions/1/content"
+curl_download(url = url, 'tmp.tar')
+untar('tmp.tar')
+file.remove('tmp.tar')
+path <- '10.22000-280/data/dataset'
 ## list of haplotypes of sires for each chromosome
-load('sire_haplotypes.RData')
+load(file.path(path, 'sire_haplotypes.RData'))
 ## assign progeny to sire
-daughterSire <- read.table('assign_to_family.txt')[, 1]
+daughterSire <- read.table(file.path(path, 'assign_to_family.txt'))[, 1]
 ## progeny genotypes
-X <- as.matrix(read.table('XFam-ARS.txt'))
+X <- as.matrix(read.table(file.path(path, 'XFam-ARS.txt')))
 ## physical and approximated genetic map
-map <- read.table('map50K_ARS_reordered.txt', header = T)
+map <- read.table(file.path(path, 'map50K_ARS_reordered.txt'), header = T)
 ## select target region
 chr <- 1
 window <- 301:600

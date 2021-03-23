@@ -15,9 +15,11 @@ library(rlist)
 Sys.time()
 
 ## ----global-------------------------------------------------------------------
-# Number of SNPs (e.g., p = 1500 resembles an average bovine chromosome)
+# number of chromosomes
+nchr <- 2
+# Number of simulated SNPs (e.g., p = 1500 resembles an average bovine chromosome)
 p <- 150
-# Number of progeny in each half-sib family 
+# Number of simulated progeny in each half-sib family 
 n <- 1000
 # Directory for (simulated) data
 path.dat <- 'data'
@@ -29,7 +31,7 @@ dir.create(path.res, showWarnings = FALSE)
 nclust <- 2
 
 ## ----alphasim-----------------------------------------------------------------
-founderPop <- runMacs2(nInd = 1000, nChr = 2, segSites = p)
+founderPop <- runMacs2(nInd = 1000, nChr = nchr, segSites = p)
 SP <- SimParam$new(founderPop)
 SP$setSexes("yes_sys")
 # Enable tracing location of recombination events
@@ -39,7 +41,20 @@ pop <- newPop(founderPop)
 N <- 10; ntotal <- N * n
 my_pop <- selectCross(pop = pop, nFemale = 500, nMale = N, use = "rand", nCrosses = ntotal)
 
-save(list = c('SP', 'founderPop', 'pop', 'my_pop', 'ntotal'), file = file.path(path.dat, 'pop.RData'))
+probRec <- list()
+for(chr in 1:nchr){
+  co.pat <- matrix(0, ncol = p, nrow = ntotal)
+  for(i in 1:ntotal){
+    if(nrow(SP$recHist[[1000 + i]][[chr]][[2]]) > 1){
+      # 1. line contains 1 1 by default
+      loci <- SP$recHist[[1000 + i]][[chr]][[2]][-1, 2] 
+      co.pat[i, loci] <- 1 
+    }
+  }
+  probRec[[chr]] <- colMeans(co.pat)
+}
+
+save(list = c('SP', 'founderPop', 'pop', 'my_pop', 'ntotal', 'probRec'), file = 'data/pop.RData')
 
 ## ----genetic-data-------------------------------------------------------------
 PAT <- my_pop@father
@@ -62,11 +77,11 @@ MAT <- my_pop@mother
 SEX <- 2
 PHENOTYPE <- -9
 
-for(chr in 1:2){
-  write.table(map[map$Chr == chr, ], file.path(path.dat, paste0('map', chr, '.map')), 
+for(chr in 1:nchr){
+  write.table(map[map$Chr == chr, ], file.path(path.dat, paste0('map_chr', chr, '.map')), 
               col.names = F, row.names = F, quote = F)
   write.table(cbind(FID, IID, PAT, MAT, SEX, PHENOTYPE, X[, map$Chr == chr]), 
-              file.path(path.dat, paste0('hsphase_input', chr, '.raw')), col.names = T, row.names = F, quote = F) 
+              file.path(path.dat, paste0('hsphase_input_chr', chr, '.raw')), col.names = T, row.names = F, quote = F) 
 }
 
 ## ----parallel-computing-------------------------------------------------------
@@ -74,15 +89,15 @@ cl <- makeCluster(nclust)
 registerDoParallel(cl)
 
 ## ----recombination-rate-------------------------------------------------------
-out <- foreach(chr = 1:2, .packages = 'hsrecombi') %dopar% {
+out <- foreach(chr = 1:nchr, .packages = 'hsrecombi') %dopar% {
   
   # 1: Physical  map
-  map <- read.table(file.path(path.dat, paste0('map', chr, '.map')), col.names = c('Chr', 'Name', 'locus_Mb', 'locus_bp'))
+  map <- read.table(file.path(path.dat, paste0('map_chr', chr, '.map')), col.names = c('Chr', 'Name', 'locus_Mb', 'locus_bp'))
   map$SNP <- 1:nrow(map)
   locus_Mb <- map$locus_Mb
 
   # 2: Genotype matrix
-  genomatrix <- data.table::fread(file.path(path.dat, paste0('hsphase_input', chr, '.raw')))
+  genomatrix <- data.table::fread(file.path(path.dat, paste0('hsphase_input_chr', chr, '.raw')))
   X <- as.matrix(genomatrix[, -c(1:6)])
   
   # 3: Assign daughters to sire IDs
@@ -107,7 +122,7 @@ print(which(unlist(out) == 'OK'))
 
 ## ----misplaced----------------------------------------------------------------
 # 6a: Filter SNPs with unusually large recombination rate to neighbouring (30) SNPs
-excl <- foreach(chr = 1:2, .packages = 'hsrecombi') %dopar% {
+excl <- foreach(chr = 1:nchr, .packages = 'hsrecombi') %dopar% {
   load(file.path(path.res, paste0("Results_chr", chr, ".RData")))
   checkCandidates(final)
 }
@@ -137,7 +152,7 @@ ggplot(data = target, aes(SNP2, SNP1, fill = theta)) +
 excl[[1]] <- excl[[2]] <- NA
 
 ## ----genetic-position---------------------------------------------------------
-pos <- foreach(chr = 1:2, .packages = 'hsrecombi') %dopar% {
+pos <- foreach(chr = 1:nchr, .packages = 'hsrecombi') %dopar% {
   load(file.path(path.res, paste0("Results_chr", chr, ".RData")))
   out <- geneticPosition(final, exclude = excl[[chr]])
   list(pos.cM = c(out, rep(NA, length(locus_Mb) - length(out))), pos.Mb = locus_Mb)
@@ -156,16 +171,7 @@ chr <- 2
 
 ## ----check-simulated----------------------------------------------------------
 load(file.path(path.dat, 'pop.RData'))
-co.pat <- matrix(0, ncol = p, nrow = ntotal)
-for(i in 1:ntotal){
-  if(nrow(SP$recHist[[1000 + i]][[chr]][[2]]) > 1){
-    # 1. line contains 1 1 by default
-    loci <- SP$recHist[[1000 + i]][[chr]][[2]][-1, 2] 
-    co.pat[i, loci] <- 1 
-  }
-}
-probRec <- colMeans(co.pat)
-sim.cM <- cumsum(probRec) * 100
+sim.cM <- cumsum(probRec[[chr]]) * 100
 
 ## ----check-deterministic------------------------------------------------------
 load(file.path(path.res, paste0('hsphase_output_chr', chr, '.Rdata')))
@@ -177,7 +183,7 @@ plot(pos[[chr]]$pos.Mb, pos[[chr]]$pos.cM, xlab = 'physical position (Mbp)', yla
      ylim = range(c(sim.cM, hsphase.cM, pos[[chr]]$pos.cM), na.rm = T), pch = 20)
 points(pos[[chr]]$pos.Mb, sim.cM, pch = 20, col = 4)
 points(pos[[chr]]$pos.Mb, hsphase.cM, pch = 20, col = 8)
-legend('topleft', inset=c(1.01,0), legend = c('simulated', 'deterministic', 'likelihood-based'), pch = 20, col = c(4, 8, 1), bty = 'n')
+legend('topleft', inset=c(1.01,0), legend = c('simulated', 'likelihood-based', 'deterministic'), pch = 20, col = c(4, 1, 8), bty = 'n')
 
 ## ----cleanup------------------------------------------------------------------
 unlink(path.dat, recursive = TRUE)

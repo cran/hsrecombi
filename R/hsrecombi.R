@@ -68,7 +68,7 @@
 #'   Hampel, A., Teuscher, F., Gomez-Raya, L., Doschoris, M. & Wittenburg, D.
 #'    (2018) Estimation of recombination rate and maternal linkage
 #'    disequilibrium in half-sibs. Frontiers in Genetics 9:186.
-#'    \url{https://doi.org/10.3389/fgene.2018.00186}
+#'    \doi{10.3389/fgene.2018.00186}
 #'
 #'   Gomez-Raya, L. (2012) Maximum likelihood estimation of linkage
 #'    disequilibrium in half-sib families. Genetics 191:195-213.
@@ -154,6 +154,11 @@ hsrecombi <- function(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-6)
 #' @param threshold optional value; recombination rates <= threshold are
 #'   considered for smoothing
 #' @return vector (LEN p) of genetic positions of SNPs (in cM)
+#' @references
+#'  Qanbari, S. & Wittenburg, D. (2020) Male recombination map of the autosomal
+#'  genome in German Holstein. Genetics Selection Evolution 52:73.
+#'  \doi{10.1186/s12711-020-00593-z}
+#'
 #' @examples
 #'   ### test data
 #'   data(targetregion)

@@ -3,7 +3,7 @@ title: "Description of the workflow for constructing a genetic map using *hsreco
 output: rmarkdown::html_vignette
 author: D. Wittenburg
 vignette: >
-  %\VignetteIndexEntry{Workflow description with hsrecombi}
+  %\VignetteIndexEntry{Description of the workflow for constructing a genetic map using *hsrecombi*}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -19,14 +19,16 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-*hsrecombi* can approximate the genetic-map positions of genetic markers from SNP genotypes in half-sib families. It is referred to [Hampel et al. (2018, Fron Gen)](https://www.frontiersin.org/articles/10.3389/fgene.2018.00186) and Qanbari & Wittenburg (2020, submitted) for more information on the methodology. The workflow relies on  paternal half-sib families but it can be adapted to maternal half-sib families with minor modifications.
+*hsrecombi* can approximate the genetic-map positions of genetic markers from SNP genotypes in half-sib families. It is referred to [Hampel et al. (2018, Fron Gen)](https://doi.org/10.3389/fgene.2018.00186) and [Qanbari & Wittenburg (2020, Genet Sel Evol)](https://doi.org/10.1186/s12711-020-00593-z) for more information on the methodology. The workflow relies on  paternal half-sib families but it can be adapted to maternal half-sib families with minor modifications.
 
 In **Part I**, genotypic data from progeny and their common parents are simulated with the R package [*AlphaSimR*](https://CRAN.R-project.org/package=AlphaSimR) and reshaped into the PLINK format. If genotypic data are already available in the required PLINK format, the workflow starts directly at **Part II**. 
 
 Required input files:
 
-* map files for each chromosome `map<chr>.map`
-* data files for each chromosome `hsphase_input<chr>.raw`
+* map files for each chromosome `map_chr<chr>.map`
+* data files for each chromosome `hsphase_input_chr<chr>.raw`
+
+**Note:** A pipeline is available at [github](https://github.com/wittenburg/hsrecombi).
 
 ```{r setup}
 library(hsrecombi) 
@@ -39,9 +41,11 @@ Sys.time()
 
 ### Global variables
 ```{r global}
-# Number of SNPs (e.g., p = 1500 resembles an average bovine chromosome)
+# number of chromosomes
+nchr <- 2
+# Number of simulated SNPs (e.g., p = 1500 resembles an average bovine chromosome)
 p <- 150
-# Number of progeny in each half-sib family 
+# Number of simulated progeny in each half-sib family 
 n <- 1000
 # Directory for (simulated) data
 path.dat <- 'data'
@@ -59,7 +63,7 @@ For instance, executing the following workflow with $p=1500$ and $n\geq 1000$ re
 ### 1: Simulation of genetic data with R package *AlphaSimR*
 
 ```{r alphasim}
-founderPop <- runMacs2(nInd = 1000, nChr = 2, segSites = p)
+founderPop <- runMacs2(nInd = 1000, nChr = nchr, segSites = p)
 SP <- SimParam$new(founderPop)
 SP$setSexes("yes_sys")
 # Enable tracing location of recombination events
@@ -69,7 +73,20 @@ pop <- newPop(founderPop)
 N <- 10; ntotal <- N * n
 my_pop <- selectCross(pop = pop, nFemale = 500, nMale = N, use = "rand", nCrosses = ntotal)
 
-save(list = c('SP', 'founderPop', 'pop', 'my_pop', 'ntotal'), file = file.path(path.dat, 'pop.RData'))
+probRec <- list()
+for(chr in 1:nchr){
+  co.pat <- matrix(0, ncol = p, nrow = ntotal)
+  for(i in 1:ntotal){
+    if(nrow(SP$recHist[[1000 + i]][[chr]][[2]]) > 1){
+      # 1. line contains 1 1 by default
+      loci <- SP$recHist[[1000 + i]][[chr]][[2]][-1, 2] 
+      co.pat[i, loci] <- 1 
+    }
+  }
+  probRec[[chr]] <- colMeans(co.pat)
+}
+
+save(list = c('SP', 'founderPop', 'pop', 'my_pop', 'ntotal', 'probRec'), file = 'data/pop.RData')
 ```
 
 Two chromosomes, each with $p$ SNPs and 1 Morgan length, are simulated. The founder population consists of 1\,000 animals with equal gender distribution. The follow-up generation consists of $N$ paternal-half sib families with equal number of progeny $n$. The study design with the equal number of progeny per family was preferred here for simplicity but this is not required in the subsequent steps.
@@ -99,11 +116,11 @@ MAT <- my_pop@mother
 SEX <- 2
 PHENOTYPE <- -9
 
-for(chr in 1:2){
-  write.table(map[map$Chr == chr, ], file.path(path.dat, paste0('map', chr, '.map')), 
+for(chr in 1:nchr){
+  write.table(map[map$Chr == chr, ], file.path(path.dat, paste0('map_chr', chr, '.map')), 
               col.names = F, row.names = F, quote = F)
   write.table(cbind(FID, IID, PAT, MAT, SEX, PHENOTYPE, X[, map$Chr == chr]), 
-              file.path(path.dat, paste0('hsphase_input', chr, '.raw')), col.names = T, row.names = F, quote = F) 
+              file.path(path.dat, paste0('hsphase_input_chr', chr, '.raw')), col.names = T, row.names = F, quote = F) 
 }
 ```
 
@@ -117,15 +134,15 @@ registerDoParallel(cl)
 
 ### Steps 1-5: Calculation of pairwise recombination rates
 ```{r recombination-rate}
-out <- foreach(chr = 1:2, .packages = 'hsrecombi') %dopar% {
+out <- foreach(chr = 1:nchr, .packages = 'hsrecombi') %dopar% {
   
   # 1: Physical  map
-  map <- read.table(file.path(path.dat, paste0('map', chr, '.map')), col.names = c('Chr', 'Name', 'locus_Mb', 'locus_bp'))
+  map <- read.table(file.path(path.dat, paste0('map_chr', chr, '.map')), col.names = c('Chr', 'Name', 'locus_Mb', 'locus_bp'))
   map$SNP <- 1:nrow(map)
   locus_Mb <- map$locus_Mb
 
   # 2: Genotype matrix
-  genomatrix <- data.table::fread(file.path(path.dat, paste0('hsphase_input', chr, '.raw')))
+  genomatrix <- data.table::fread(file.path(path.dat, paste0('hsphase_input_chr', chr, '.raw')))
   X <- as.matrix(genomatrix[, -c(1:6)])
   
   # 3: Assign daughters to sire IDs
@@ -154,7 +171,7 @@ In step 4, function `makehap` would be sufficient but `makehappm` allows compari
 ### 6: Check for candidates of misplacement
 ```{r misplaced}
 # 6a: Filter SNPs with unusually large recombination rate to neighbouring (30) SNPs
-excl <- foreach(chr = 1:2, .packages = 'hsrecombi') %dopar% {
+excl <- foreach(chr = 1:nchr, .packages = 'hsrecombi') %dopar% {
   load(file.path(path.res, paste0("Results_chr", chr, ".RData")))
   checkCandidates(final)
 }
@@ -189,7 +206,7 @@ Orange colour in the SNP neighbourhood implies an increased recombination rate. 
 ### 7: Approximation of genetic positions
 
 ```{r genetic-position}
-pos <- foreach(chr = 1:2, .packages = 'hsrecombi') %dopar% {
+pos <- foreach(chr = 1:nchr, .packages = 'hsrecombi') %dopar% {
   load(file.path(path.res, paste0("Results_chr", chr, ".RData")))
   out <- geneticPosition(final, exclude = excl[[chr]])
   list(pos.cM = c(out, rep(NA, length(locus_Mb) - length(out))), pos.Mb = locus_Mb)
@@ -220,16 +237,7 @@ chr <- 2
 ### 1: Check with simulated data
 ```{r check-simulated}
 load(file.path(path.dat, 'pop.RData'))
-co.pat <- matrix(0, ncol = p, nrow = ntotal)
-for(i in 1:ntotal){
-  if(nrow(SP$recHist[[1000 + i]][[chr]][[2]]) > 1){
-    # 1. line contains 1 1 by default
-    loci <- SP$recHist[[1000 + i]][[chr]][[2]][-1, 2] 
-    co.pat[i, loci] <- 1 
-  }
-}
-probRec <- colMeans(co.pat)
-sim.cM <- cumsum(probRec) * 100
+sim.cM <- cumsum(probRec[[chr]]) * 100
 ```
 The position of a recombination event is traced in `SP$recHist` which has a nested list structure (individual, chromosome, female/male haplotype). The recombination rate between adjacent SNPs is determined as the proportion of recombinant progeny and the positions are derived as cumulative sum over recombination rates.
 
@@ -249,9 +257,9 @@ plot(pos[[chr]]$pos.Mb, pos[[chr]]$pos.cM, xlab = 'physical position (Mbp)', yla
      ylim = range(c(sim.cM, hsphase.cM, pos[[chr]]$pos.cM), na.rm = T), pch = 20)
 points(pos[[chr]]$pos.Mb, sim.cM, pch = 20, col = 4)
 points(pos[[chr]]$pos.Mb, hsphase.cM, pch = 20, col = 8)
-legend('topleft', inset=c(1.01,0), legend = c('simulated', 'deterministic', 'likelihood-based'), pch = 20, col = c(4, 8, 1), bty = 'n')
+legend('topleft', inset=c(1.01,0), legend = c('simulated', 'likelihood-based', 'deterministic'), pch = 20, col = c(4, 1, 8), bty = 'n')
 ```
-The likelihood-based approach requires a sufficiently large sample size if SNP density is high. A verification of the bias of genetic-map positions can be found in the Supplemental Material of Qanbari & Wittenburg (2020, submitted).
+The likelihood-based approach requires a sufficiently large sample size if SNP density is high. A verification of the bias of genetic-map positions can be found in the Supplemental Material of [Qanbari & Wittenburg (2020, Genet Sel Evol)](https://doi.org/10.1186/s12711-020-00593-z).
 
 ```{r cleanup}
 unlink(path.dat, recursive = TRUE)
