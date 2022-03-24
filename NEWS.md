@@ -1,3 +1,16 @@
+# hsrecombi 0.4.1
+
+* update data type in Rcpp routine
+
+# hsrecombi 0.4.0
+
+* new feature for determining suitable genetic mapping function
+* update vignette
+
+# hsrecombi 0.3.4
+
+* update references
+
 # hsrecombi 0.3.3
 
 * minor bug fixes

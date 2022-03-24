@@ -5,14 +5,19 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // LDHScpp
-List LDHScpp(Nullable<NumericMatrix> XGF1, Nullable<NumericMatrix> XGF2, double fAA, double fAB, double fBA, double theta, bool display, double threshold);
+List LDHScpp(Nullable<IntegerMatrix> XGF1, Nullable<IntegerMatrix> XGF2, double fAA, double fAB, double fBA, double theta, bool display, double threshold);
 RcppExport SEXP _hsrecombi_LDHScpp(SEXP XGF1SEXP, SEXP XGF2SEXP, SEXP fAASEXP, SEXP fABSEXP, SEXP fBASEXP, SEXP thetaSEXP, SEXP displaySEXP, SEXP thresholdSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Nullable<NumericMatrix> >::type XGF1(XGF1SEXP);
-    Rcpp::traits::input_parameter< Nullable<NumericMatrix> >::type XGF2(XGF2SEXP);
+    Rcpp::traits::input_parameter< Nullable<IntegerMatrix> >::type XGF1(XGF1SEXP);
+    Rcpp::traits::input_parameter< Nullable<IntegerMatrix> >::type XGF2(XGF2SEXP);
     Rcpp::traits::input_parameter< double >::type fAA(fAASEXP);
     Rcpp::traits::input_parameter< double >::type fAB(fABSEXP);
     Rcpp::traits::input_parameter< double >::type fBA(fBASEXP);

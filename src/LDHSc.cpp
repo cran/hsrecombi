@@ -5,10 +5,10 @@ using namespace Rcpp;
 //' Count genotype combinations at 2 SNPs
 //'
 //' @name countNumbers
-//' @param X numeric matrix of genotypes
+//' @param X integer matrix of genotypes
 //' @return \code{count} vector of counts of 9 possible genotypes at SNP pair
 //'
-IntegerVector countNumbers(NumericMatrix X){
+IntegerVector countNumbers(IntegerMatrix X){
   int co = 0;
   IntegerVector count (9, 0);
 
@@ -63,8 +63,8 @@ double loglikfun(IntegerVector counts, double fAA, double fAB, double fBA, doubl
 //'
 //' @name LDHScpp
 //'
-//' @param XGF1 numeric matrix of progeny genotypes in genomic family 1
-//' @param XGF2 numeric matrix of progeny genotypes in genomic family 2
+//' @param XGF1 integer matrix of progeny genotypes in genomic family 1
+//' @param XGF2 integer matrix of progeny genotypes in genomic family 2
 //' @param fAA frequency of maternal haplotype 1-1
 //' @param fAB frequency of maternal haplotype 1-0
 //' @param fBA frequency of maternal haplotype 0-1
@@ -91,8 +91,8 @@ double loglikfun(IntegerVector counts, double fAA, double fAB, double fBA, doubl
 //' }
 //' @export
 // [[Rcpp::export]]
-List LDHScpp(Nullable<NumericMatrix> XGF1,
-               Nullable<NumericMatrix> XGF2,
+List LDHScpp(Nullable<IntegerMatrix> XGF1,
+               Nullable<IntegerMatrix> XGF2,
                double fAA, double fAB, double fBA, double theta, bool display, double threshold){
 
   int nAAAA, nAAAB, nAABB, nABAA, nABAB, nABBB, nBBAA, nBBAB, nBBBB, N, iter;
@@ -104,14 +104,14 @@ List LDHScpp(Nullable<NumericMatrix> XGF1,
 
 
   if (XGF1.isNotNull()){
-    NumericMatrix fam1 = as<NumericMatrix>(XGF1);
+    IntegerMatrix fam1 = as<IntegerMatrix>(XGF1);
     nfam1 = fam1.nrow();
     n1 = countNumbers(fam1);
     if(display) Rcout << n1 << "\n";
     if(fam1.ncol() > 2) Rcout << "WARNING: only the first two columns of *genomic family 1* will be used \n";
   }
   if (XGF2.isNotNull()){
-    NumericMatrix fam2 = as<NumericMatrix>(XGF2);
+    IntegerMatrix fam2 = as<IntegerMatrix>(XGF2);
     nfam2 = fam2.nrow();
     n2 = countNumbers(fam2);
     if(display) Rcout << n2 << "\n";
@@ -188,9 +188,11 @@ List LDHScpp(Nullable<NumericMatrix> XGF1,
       fBBNew = (nfam1 * fBB1 + nfam2 * fBB2) / (nfam1 + nfam2);
       thetaNew = (nfam1 * theta1 + nfam2 * theta2) / (nfam1 + nfam2);
 
-      if((std::abs(fAANew - fAA) < threshold) & (std::abs(fBANew - fBA) < threshold) &
-           (std::abs(fABNew - fAB) < threshold) & (std::abs(fBBNew - fBB) < threshold) &
-           (std::abs(thetaNew - theta) < threshold)) {
+      if((std::abs(fAANew - fAA) < threshold) &
+         (std::abs(fBANew - fBA) < threshold) &
+         (std::abs(fABNew - fAB) < threshold) &
+         (std::abs(fBBNew - fBB) < threshold) &
+         (std::abs(thetaNew - theta) < threshold)) {
         if(display) Rcout << "Convergence after " << iter << " iterations\n";
         break;
       }

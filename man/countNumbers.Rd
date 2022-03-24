@@ -4,7 +4,7 @@
 \alias{countNumbers}
 \title{Count genotype combinations at 2 SNPs}
 \arguments{
-\item{X}{numeric matrix of genotypes}
+\item{X}{integer matrix of genotypes}
 }
 \value{
 \code{count} vector of counts of 9 possible genotypes at SNP pair

@@ -7,9 +7,9 @@
 LDHScpp(XGF1, XGF2, fAA, fAB, fBA, theta, display, threshold)
 }
 \arguments{
-\item{XGF1}{numeric matrix of progeny genotypes in genomic family 1}
+\item{XGF1}{integer matrix of progeny genotypes in genomic family 1}
 
-\item{XGF2}{numeric matrix of progeny genotypes in genomic family 2}
+\item{XGF2}{integer matrix of progeny genotypes in genomic family 2}
 
 \item{fAA}{frequency of maternal haplotype 1-1}
 

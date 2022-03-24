@@ -147,8 +147,8 @@ ggplot(data = target, aes(SNP2, SNP1, fill = theta)) +
         panel.grid.minor = element_line(colour = "grey")) +
   theme(text = element_text(size = 18)) +
   scale_fill_gradientn(colours = c('yellow', 'red'), limits = c(0, 1+1e-10), na.value = 'white')
-# -> nothing conspicious
 
+# -> nothing conspicious
 excl[[1]] <- excl[[2]] <- NA
 
 ## ----genetic-position---------------------------------------------------------
@@ -166,6 +166,17 @@ data <- data.frame(Chr = rep(1:length(pos), times = unlist(list.select(pos, leng
                    Mbp = unlist(list.select(pos, pos.Mb)), cM = unlist(list.select(pos, pos.cM)))
 ggplot(data, aes(x = Mbp, y = cM)) + geom_point(na.rm = T) + facet_grid(Chr ~ .)
 
+## ----plot-2-------------------------------------------------------------------
+for (chr in 1:nchr) {
+  load(file.path(path.res, paste0("Results_chr", chr, ".RData")))
+  final$theta[(final$SNP1 %in% excl[[chr]]) | (final$SNP2 %in% excl[[chr]])] <- NA
+  final$dist_M <- (pos[[chr]]$pos.cM[final$SNP2] - pos[[chr]]$pos.cM[final$SNP1]) / 100
+  out <- bestmapfun(theta = final$theta, dist_M = final$dist_M)
+  plot(final$dist_M, final$theta, xlab = 'genetic distance (Morgan)', ylab = 'recombination rate', col = 8)
+  x <- seq(0, 0.5, 0.01); y <- rao(out$mixing, x); points(y, x, type = 'l', lwd = 2)
+  legend('bottomright', legend = paste0('map function (p=', round(out$mixing, 3), ')'), lwd = 2, lty = 1, bty = 'n')
+}
+
 ## ----selection----------------------------------------------------------------
 chr <- 2
 
@@ -177,7 +188,7 @@ sim.cM <- cumsum(probRec[[chr]]) * 100
 load(file.path(path.res, paste0('hsphase_output_chr', chr, '.Rdata')))
 hsphase.cM <- c(0, cumsum(hap$probRec)) * 100
 
-## ----plot-2-------------------------------------------------------------------
+## ----plot-3-------------------------------------------------------------------
 par(mar=c(5.1, 4.1, 4.1, 9.1), xpd = TRUE)
 plot(pos[[chr]]$pos.Mb, pos[[chr]]$pos.cM, xlab = 'physical position (Mbp)', ylab = 'genetic position (cM)', 
      ylim = range(c(sim.cM, hsphase.cM, pos[[chr]]$pos.cM), na.rm = T), pch = 20)

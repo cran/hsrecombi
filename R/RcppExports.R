@@ -4,7 +4,7 @@
 #' Count genotype combinations at 2 SNPs
 #'
 #' @name countNumbers
-#' @param X numeric matrix of genotypes
+#' @param X integer matrix of genotypes
 #' @return \code{count} vector of counts of 9 possible genotypes at SNP pair
 #'
 NULL
@@ -27,8 +27,8 @@ NULL
 #'
 #' @name LDHScpp
 #'
-#' @param XGF1 numeric matrix of progeny genotypes in genomic family 1
-#' @param XGF2 numeric matrix of progeny genotypes in genomic family 2
+#' @param XGF1 integer matrix of progeny genotypes in genomic family 1
+#' @param XGF2 integer matrix of progeny genotypes in genomic family 2
 #' @param fAA frequency of maternal haplotype 1-1
 #' @param fAB frequency of maternal haplotype 1-0
 #' @param fBA frequency of maternal haplotype 0-1

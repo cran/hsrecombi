@@ -394,3 +394,67 @@ checkCandidates <- function(final, win = 30, quant = 0.99){
 
   return(cand)
 }
+
+
+#' @title System of genetic mapping functions
+#' @name rao
+#' @description Calculation of genetic distances from recombination rates given
+#'   a mixing parameter
+#' @details Mixing parameter \code{p=0} would match to Morgan, \code{p=0.25} to
+#'   Carter, \code{p=0.5} to Kosambi and \code{p=1} to Haldane map function
+#' @param p mixing parameter (see details); \code{0 <= p <= 1}
+#' @param x vector of recombination rates
+#' @return vector of genetic positions in Morgan units
+#' @references Rao, D.C., Morton, N.E., Lindsten, J., Hulten, M. & Yee, S (1977)
+#'   A mapping function for man. Human Heredity 27: 99-104.
+#'   \doi{10.1159/000152856}
+#' @examples
+#'   rao(0.25, seq(0, 0.5, 0.01))
+#' @export
+rao <- function(p, x){
+  y <- c()
+  # theta -> Morgan
+  for(i in 1:length(x)){
+    theta <- min(x[i], 0.499)
+    y[i] <- (p * (2 * p - 1) * (1 - 4 * p) * log(1 - 2 * theta) +
+               16 * p * (p - 1) * (2 * p - 1) * atan(2 * theta) +
+               2 * p * (1 - p) * (8 * p + 2) * atanh(2 * theta) +
+               6 * (1 - p) * (1 - 2 * p) * (1 - 4 * p) * theta) / 6
+  }
+  y
+}
+
+
+#' @title Best fitting map function
+#' @name bestmapfun
+#' @description Approximation of mixing parameter of system of map functions
+#' @details The genetic mapping function that fits best to the genetic data
+#'   (recombination rate and genetic distances) is obtained from Rao's system of
+#'   mapping functions. The corresponding mixing parameter is estimated via
+#'   1-dimensional constrained optimisation.
+#'   See vignette for its application to estimated data.
+#' @param theta vector of recombination rates
+#' @param dist_M vector of genetic positions
+#' @return list (LEN 2)
+#' \describe{
+#'   \item{mixing}{mixing parameter of system of genetic mapping functions}
+#'   \item{mse}{minimum value of target function (theta - dist_M)^2}
+#' }
+#' @references Rao, D.C., Morton, N.E., Lindsten, J., Hulten, M. & Yee, S (1977)
+#'   A mapping function for man. Human Heredity 27: 99-104.
+#'   \doi{10.1159/000152856}
+#' @examples
+#'   theta <- seq(0, 0.5, 0.01)
+#'   gendist <- -log(1 - 2 * theta) / 2
+#'   bestmapfun(theta, gendist)
+#' @importFrom stats optim
+#' @export
+bestmapfun <- function(theta, dist_M){
+  if(length(theta) != length(dist_M)) stop('ERROR incompatible vector lengths')
+  idx <- is.finite(theta) & is.finite(dist_M)
+  targetfun <- function(a) {
+    mean((rao(a, theta[idx]) - dist_M[idx]) ^ 2)
+  }
+  sln <- optim(0.1, targetfun, method = "Brent", lower = 0, upper = 1)
+  return(list(mixing = sln$par, mse = sln$value))
+}
