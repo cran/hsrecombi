@@ -37,8 +37,8 @@ list (LEN p - 1) of data.frames; for each SNP, parameters are
   \item{\code{fAB}}{frequency of maternal haplotype 1-0}
   \item{\code{fBA}}{frequency of maternal haplotype 0-1}
   \item{\code{fBB}}{frequency of maternal haplotype 0-0}
-  \item{\code{p1}}{Maternal allele frequency (allele 1)}
-  \item{\code{p2}}{Maternal allele frequency (allele 0)}
+  \item{\code{p1}}{Maternal allele frequency (allele 1) at \code{SNP1}}
+  \item{\code{p2}}{Maternal allele frequency (allele 1) at \code{SNP2}}
   \item{\code{nfam1}}{size of genomic family 1}
   \item{\code{nfam2}}{size of genomic family 2}
   \item{\code{error}}{0 if computations were without error; 1 if EM algorithm

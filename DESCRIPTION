@@ -1,8 +1,8 @@
 Package: hsrecombi
 Type: Package
 Title: Estimation of Recombination Rate and Maternal LD in Half-Sibs
-Version: 0.4.1
-Date: 2022-03-24
+Version: 0.4.2
+Date: 2022-03-25
 Authors@R: c(person("Dörte","Wittenburg", role = c("aut", "cre"), 
     email = "wittenburg@fbn-dummerstorf.de"))
 Description: Paternal recombination rate and maternal linkage disequilibrium 
@@ -36,8 +36,8 @@ Suggests: knitr, rmarkdown, formatR, AlphaSimR (>= 0.13.0), doParallel,
         ggplot2
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2022-03-24 07:35:05 UTC; wittenburg
+Packaged: 2022-03-25 06:46:43 UTC; wittenburg
 Author: Dörte Wittenburg [aut, cre]
 Maintainer: Dörte Wittenburg <wittenburg@fbn-dummerstorf.de>
 Repository: CRAN
-Date/Publication: 2022-03-24 08:40:09 UTC
+Date/Publication: 2022-03-27 14:30:06 UTC

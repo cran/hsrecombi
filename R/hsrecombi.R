@@ -37,8 +37,8 @@
 #'   \item{\code{fAB}}{frequency of maternal haplotype 1-0}
 #'   \item{\code{fBA}}{frequency of maternal haplotype 0-1}
 #'   \item{\code{fBB}}{frequency of maternal haplotype 0-0}
-#'   \item{\code{p1}}{Maternal allele frequency (allele 1)}
-#'   \item{\code{p2}}{Maternal allele frequency (allele 0)}
+#'   \item{\code{p1}}{Maternal allele frequency (allele 1) at \code{SNP1}}
+#'   \item{\code{p2}}{Maternal allele frequency (allele 1) at \code{SNP2}}
 #'   \item{\code{nfam1}}{size of genomic family 1}
 #'   \item{\code{nfam2}}{size of genomic family 2}
 #'   \item{\code{error}}{0 if computations were without error; 1 if EM algorithm
@@ -77,6 +77,7 @@
 #' @export
 hsrecombi <- function(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-6){
   if((length(snp.chr) != ncol(genotype.chr)) | (length(snp.chr) != ncol(hap$sireHap[[1]]))) stop('ERROR: inconsistency in number of SNPs')
+  if(!all(genotype.chr %in% c(0, 1, 2))) stop('ERROR: coding of genotypes must be 0, 1, 2')
   ls <- list()
   for(j in 1:(length(snp.chr) - 1)){
     out <- c()

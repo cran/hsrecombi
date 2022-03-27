@@ -1,3 +1,7 @@
+# hsrecombi 0.4.2
+
+* minor bug fixes
+
 # hsrecombi 0.4.1
 
 * update data type in Rcpp routine

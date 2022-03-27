@@ -15,7 +15,7 @@ IntegerVector countNumbers(IntegerMatrix X){
   for(int k = 2; k >= 0; --k){
     for(int l = 2; l >= 0; --l){
       for(int i = 0; i < X.nrow(); ++i) {
-        if((X(i, 0) == k) & (X(i, 1) == l)) count(co) += 1;
+        if((X(i, 0) == k) && (X(i, 1) == l)) count(co) += 1;
       }
       co += 1;
     }
@@ -78,8 +78,8 @@ double loglikfun(IntegerVector counts, double fAA, double fAB, double fBA, doubl
 //'  \item{\code{fAB}}{frequency of maternal haplotype 1-0}
 //'  \item{\code{fBA}}{frequency of maternal haplotype 0-1}
 //'  \item{\code{fBB}}{frequency of maternal haplotype 0-0}
-//'  \item{\code{p1}}{Maternal allele frequency (allele 1)}
-//'  \item{\code{p2}}{Maternal allele frequency (allele 0)}
+//'  \item{\code{p1}}{Maternal allele frequency (allele 1) at 1. SNP}
+//'  \item{\code{p2}}{Maternal allele frequency (allele 1) at 2. SNP}
 //'  \item{\code{nfam1}}{size of genomic family 1}
 //'  \item{\code{nfam2}}{size of genomic family 2}
 //'  \item{\code{error}}{0 if computations were without error; 1 if EM algorithm
@@ -188,10 +188,10 @@ List LDHScpp(Nullable<IntegerMatrix> XGF1,
       fBBNew = (nfam1 * fBB1 + nfam2 * fBB2) / (nfam1 + nfam2);
       thetaNew = (nfam1 * theta1 + nfam2 * theta2) / (nfam1 + nfam2);
 
-      if((std::abs(fAANew - fAA) < threshold) &
-         (std::abs(fBANew - fBA) < threshold) &
-         (std::abs(fABNew - fAB) < threshold) &
-         (std::abs(fBBNew - fBB) < threshold) &
+      if((std::abs(fAANew - fAA) < threshold) &&
+         (std::abs(fBANew - fBA) < threshold) &&
+         (std::abs(fABNew - fAB) < threshold) &&
+         (std::abs(fBBNew - fBB) < threshold) &&
          (std::abs(thetaNew - theta) < threshold)) {
         if(display) Rcout << "Convergence after " << iter << " iterations\n";
         break;
