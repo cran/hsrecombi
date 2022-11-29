@@ -33,7 +33,7 @@ Smoothing of recombination rates (theta) <= 0.05 via quadratic
   not restricted to adjacent markers. The incidence matrix D contains 1's for
   those intervals contributing to the total distance relevant for each theta.
 
-  Estmates of theta = 1e-6 are neglected as these values coincide with start
+  Estimates of theta = 1e-6 are neglected as these values coincide with start
   values and indicate that (because of a very flat likelihood surface) no
   meaningful estimate of recombination rate has been obtained.
 }

@@ -18,7 +18,7 @@ hsrecombi(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-06)
 \item{genotype.chr}{matrix (DIM n x p) of all progeny genotypes (0, 1, 2) on
 a chromosome with p SNPs}
 
-\item{snp.chr}{vector(LEN p) of SNP indices as in physical map}
+\item{snp.chr}{vector(LEN p) of SNP indices or names as in physical map}
 
 \item{only.adj}{logical; if \code{TRUE}, recombination rate is calculated
 only between neighbouring markers}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{rao}
 \alias{rao}
-\title{System of genetic mapping functions}
+\title{System of genetic-map functions}
 \usage{
 rao(p, x)
 }

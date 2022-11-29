@@ -4,7 +4,7 @@
 \alias{makehap}
 \title{Make list of imputed sire haplotypes}
 \usage{
-makehap(sireID, daughterSire, genotype.chr, nmin = 30)
+makehap(sireID, daughterSire, genotype.chr, nmin = 30, exclude = NULL)
 }
 \arguments{
 \item{sireID}{vector (LEN N) of IDs of all sires}
@@ -16,6 +16,8 @@ chromosome with p SNPs}
 
 \item{nmin}{scalar, minimum required number of progeny for proper imputation,
 default 30}
+
+\item{exclude}{vector (LEN < p) of SNP indices to be excluded from analysis}
 }
 \value{
 list (LEN 2) of lists. For each sire:

@@ -22,7 +22,7 @@
 #' }
 #' @param genotype.chr matrix (DIM n x p) of all progeny genotypes (0, 1, 2) on
 #'   a chromosome with p SNPs
-#' @param snp.chr vector(LEN p) of SNP indices as in physical map
+#' @param snp.chr vector(LEN p) of SNP indices or names as in physical map
 #' @param only.adj logical; if \code{TRUE}, recombination rate is calculated
 #'   only between neighbouring markers
 #' @param prec scalar; precision of estimation
@@ -73,17 +73,20 @@
 #'   Gomez-Raya, L. (2012) Maximum likelihood estimation of linkage
 #'    disequilibrium in half-sib families. Genetics 191:195-213.
 #' @importFrom Rcpp evalCpp
+#' @importFrom rlist list.rbind
 #' @useDynLib hsrecombi
 #' @export
 hsrecombi <- function(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-6){
+
   if((length(snp.chr) != ncol(genotype.chr)) | (length(snp.chr) != ncol(hap$sireHap[[1]]))) stop('ERROR: inconsistency in number of SNPs')
   if(!all(genotype.chr %in% c(0, 1, 2))) stop('ERROR: coding of genotypes must be 0, 1, 2')
-  ls <- list()
-  for(j in 1:(length(snp.chr) - 1)){
-    out <- c()
+
+  ls <- lapply(1:(length(snp.chr) - 1), function(j){
+
     if(j %% 100 == 1) message(paste('Processing SNP', j))
     q <- ifelse(!only.adj, length(snp.chr), j + 1)
-    for (i in (j + 1):q){
+
+    out <- lapply((j + 1):q, function(i){
 
       ## set-up genomic families for snp pairs
       GenFam1 <- GenFam2 <- c()
@@ -121,12 +124,13 @@ hsrecombi <- function(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-6)
           unimodal <- 1
         }
 
-        out <- rbind(out, c(SNP1 = snp.chr[j], SNP2 = snp.chr[i], sln1 = unlist(sln1), sln2 = unlist(sln2),
-                            unimodal = unimodal, critical = start$critical))
-      }
-    }
-    ls[[j]] <- data.frame(out)
-  }
+        c(SNP1 = snp.chr[j], SNP2 = snp.chr[i], sln1 = unlist(sln1), sln2 = unlist(sln2),
+                            unimodal = unimodal, critical = start$critical)
+      } else NULL
+
+    })
+    data.frame(rlist::list.rbind(out))
+  })
   return(ls)
 }
 
@@ -144,7 +148,7 @@ hsrecombi <- function(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-6)
 #'   not restricted to adjacent markers. The incidence matrix D contains 1's for
 #'   those intervals contributing to the total distance relevant for each theta.
 #'
-#'   Estmates of theta = 1e-6 are neglected as these values coincide with start
+#'   Estimates of theta = 1e-6 are neglected as these values coincide with start
 #'   values and indicate that (because of a very flat likelihood surface) no
 #'   meaningful estimate of recombination rate has been obtained.
 #' @param final table of results produced by \code{editraw} with pairwise
@@ -171,28 +175,36 @@ hsrecombi <- function(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-6)
 #'   final <- editraw(res, map.chr)
 #'   ### approximation of genetic positions
 #'   pos <- geneticPosition(final)
+#' @import Matrix
+#' @importFrom rlist list.select
 #' @importFrom quadprog solve.QP
 #' @export
 geneticPosition <- function(final, exclude = NULL, threshold = 0.05){
   part <- final[(final$theta <= threshold) & (final$theta >= 1e-5) &
                   !(final$SNP1 %in% exclude) & !(final$SNP2 %in% exclude), ]
-  p <- max(part$SNP2) - min(part$SNP1) + 1
+  mini <- min(part$SNP1)
+  p <- max(part$SNP2) - mini + 1
 
-  # quadratic optimization min(theta - D d)² s.t. d > 0
-  D <- matrix(0, ncol = p - 1, nrow = nrow(part))
-  for (i in 1:nrow(part)) {
-    D[i, (part$SNP1[i] - min(part$SNP1) + 1):(part$SNP2[i] - min(part$SNP1))] <- 1
-  }
+  ## quadratic optimization min(theta - D d)² s.t. d > 0
+  # set up D matrix
+  out <-  lapply(1:nrow(part), function(i){
+    vec.j <- (part$SNP1[i] - mini + 1):(part$SNP2[i] - mini)
+    vec.i <- rep(i, length(vec.j))
+    list(vec.i = vec.i, vec.j = vec.j)
+  })
+  vec.i <- unlist(list.select(out, vec.i))
+  vec.j <- unlist(list.select(out, vec.j))
+  D <- sparseMatrix(i = vec.i, j = vec.j, x = 1)
 
   # components for quadprog, make D p.d.
   dvec <- crossprod(D, part$theta)
-  Amat <- diag(1, p - 1)
-  Dmat <- crossprod(D) + diag(1e-6, p - 1)
+  Amat <- diag(nrow = p - 1, x = 1)
+  Dmat <- crossprod(D) + diag(nrow = p - 1, x = 1e-6)
 
   sln <- solve.QP(Dmat, dvec, Amat)
   gen <- c(0, cumsum(sln$solution)) * 100
 
-  if(min(part$SNP1) > 1) gen <- c(rep(NA, min(part$SNP1) - 1), gen)
+  if(mini > 1) gen <- c(rep(NA, mini - 1), gen)
   names(gen) <- 1:max(part$SNP2)
   id <- unique(c(part$SNP1, part$SNP2))
   gen[!(names(gen) %in% id)] <- NA

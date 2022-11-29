@@ -4,7 +4,7 @@
 \alias{makehappm}
 \title{Make list of imputed haplotypes and recombination rate}
 \usage{
-makehappm(sireID, daughterSire, genotype.chr, nmin = 30)
+makehappm(sireID, daughterSire, genotype.chr, nmin = 30, exclude = NULL)
 }
 \arguments{
 \item{sireID}{vector (LEN N) of IDs of all sires}
@@ -14,7 +14,10 @@ makehappm(sireID, daughterSire, genotype.chr, nmin = 30)
 \item{genotype.chr}{matrix (DIM n x p) of progeny genotypes on a single
 chromosome with p SNPs}
 
-\item{nmin}{scalar, minimum number of progeny required, default 1}
+\item{nmin}{scalar, minimum required number of progeny for proper imputation,
+default 30}
+
+\item{exclude}{vector (LEN < p) of SNP indices to be excluded from analysis}
 }
 \value{
 hap list (LEN 2) of lists. For each sire:

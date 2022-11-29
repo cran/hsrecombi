@@ -47,6 +47,7 @@ makehaplist <- function(daughterSire, hapSire, nmin = 1){
 #'   chromosome with p SNPs
 #' @param nmin scalar, minimum required number of progeny for proper imputation,
 #'   default 30
+#' @param exclude vector (LEN < p) of SNP indices to be excluded from analysis
 #' @return list (LEN 2) of lists. For each sire:
 #' \describe{
 #'   \item{\code{famID}}{list (LEN N) of vectors (LEN n.progeny) of progeny
@@ -65,9 +66,11 @@ makehaplist <- function(daughterSire, hapSire, nmin = 1){
 #'   \url{https://CRAN.R-project.org/package=hsphase}
 #' @import hsphase
 #' @export
-makehap <- function(sireID, daughterSire, genotype.chr, nmin = 30){
+makehap <- function(sireID, daughterSire, genotype.chr, nmin = 30, exclude = NULL){
 
+  if(length(exclude) >= ncol(genotype.chr)) stop("ERROR SNP IDs to be excluded")
   ListFam <- ListHap <- list()
+  genotype.chr[, exclude] <- 9
 
   for (i in sireID){
     # index of progeny
@@ -103,7 +106,9 @@ makehap <- function(sireID, daughterSire, genotype.chr, nmin = 30){
 #' @param daughterSire vector (LEN n) of sire ID for each progeny
 #' @param genotype.chr matrix (DIM n x p) of progeny genotypes on a single
 #'   chromosome with p SNPs
-#' @param nmin scalar, minimum number of progeny required, default 1
+#' @param nmin scalar, minimum required number of progeny for proper imputation,
+#'   default 30
+#' @param exclude vector (LEN < p) of SNP indices to be excluded from analysis
 #' @return hap list (LEN 2) of lists. For each sire:
 #' \describe{
 #'   \item{\code{famID}}{list (LEN N) of vectors (LEN n.progeny) of progeny
@@ -127,9 +132,11 @@ makehap <- function(sireID, daughterSire, genotype.chr, nmin = 30){
 #' @import hsphase
 #' @importFrom rlist list.rbind
 #' @export
-makehappm <- function(sireID, daughterSire, genotype.chr, nmin = 30){
+makehappm <- function(sireID, daughterSire, genotype.chr, nmin = 30, exclude = NULL){
 
+  if(length(exclude) >= ncol(genotype.chr)) stop("ERROR SNP IDs to be excluded")
   ListFam <- ListHap <- ListPm <- ListRec <- list()
+  genotype.chr[, exclude] <- 9
 
   for (i in sireID){
     # index of progeny
@@ -155,7 +162,22 @@ makehappm <- function(sireID, daughterSire, genotype.chr, nmin = 30){
     }
   }
   big <- rlist::list.rbind(ListPm)
-  return(list(famID = ListFam, sireHap = ListHap, probRec = colMeans(big, na.rm = TRUE), numberRec = ListRec))
+
+  # revise recrate: estimated recrate between misplaced marker (= NA) and predecessor is added to the successor
+  probs <- c(0, colMeans(big, na.rm = TRUE))
+  if(!is.null(exclude)){
+    for(i in sort(exclude)){
+      if(i < ncol(genotype.chr)) {
+        probs[i + 1] <- probs[i + 1] + probs[i]
+      } else{
+        id <- tail(setdiff(which(!is.na(probs)), i), 1)
+        probs[id] <- probs[id] + probs[i]
+      }
+      probs[i] <- NA
+    }
+  }
+
+  return(list(famID = ListFam, sireHap = ListHap, probRec = probs[-1], numberRec = ListRec))
 }
 
 
@@ -347,9 +369,9 @@ editraw <- function(Roh, map1){
 #' @description Search for SNPs with unusually large estimates of recombination
 #'   rate
 #' @details Markers with unusually large estimates of recombination rate to
-#'   close SNPs are candidates for misplacements in the underlying assembly. The
+#'   close SNPs are candidates for misplacement in the underlying assembly. The
 #'   mean of recombination rate estimates with \code{win} subsequent or
-#'   preceeding markers is calculated and those SNPs with mean value exceeding
+#'   preceding markers is calculated and those SNPs with mean value exceeding
 #'   the \code{quant} quantile are denoted as candidates which have to be
 #'   manually curated!
 #'   This can be done, for instance, by visual inspection of a correlation plot
@@ -396,7 +418,7 @@ checkCandidates <- function(final, win = 30, quant = 0.99){
 }
 
 
-#' @title System of genetic mapping functions
+#' @title System of genetic-map functions
 #' @name rao
 #' @description Calculation of genetic distances from recombination rates given
 #'   a mixing parameter
@@ -413,9 +435,10 @@ checkCandidates <- function(final, win = 30, quant = 0.99){
 #' @export
 rao <- function(p, x){
   y <- c()
+  if(max(x) >= 0.5) message('Maximum recombination rate is set to 0.5')
   # theta -> Morgan
   for(i in 1:length(x)){
-    theta <- min(x[i], 0.499)
+    theta <- min(x[i], 0.49999)
     y[i] <- (p * (2 * p - 1) * (1 - 4 * p) * log(1 - 2 * theta) +
                16 * p * (p - 1) * (2 * p - 1) * atan(2 * theta) +
                2 * p * (1 - p) * (8 * p + 2) * atanh(2 * theta) +
@@ -424,13 +447,109 @@ rao <- function(p, x){
   y
 }
 
+#' @title Haldane's genetic map function
+#' @name haldane
+#' @description Calculation of genetic distances from recombination rates
+#' @param x vector of recombination rates
+#' @return vector of genetic positions in Morgan units
+#' @references Haldane JBS (1919) The combination of linkage values, and the
+#'   calculation of distances between the loci of linked factors. J Genet 8:
+#'   299-309.
+#' @examples
+#'   haldane(seq(0, 0.5, 0.01))
+#' @export
+haldane <- function(x){
+  y <- c()
+  if(max(x) >= 0.5) message('Maximum recombination rate is set to 0.5')
+  # theta -> Morgan
+  for (i in 1:length(x)){
+    theta <- min(x[i], 0.49999)
+    y[i] <- -0.5 * log(1 - 2 * theta)
+  }
+  y
+}
 
-#' @title Best fitting map function
+#' @title Kosambi's genetic map function
+#' @name kosambi
+#' @description Calculation of genetic distances from recombination rates
+#' @param x vector of recombination rates
+#' @return vector of genetic positions in Morgan units
+#' @references Kosambi D.D. (1944) The estimation of map distance from
+#'   recombination values. Ann. Eugen. 12: 172-175.
+#' @examples
+#'   kosambi(seq(0, 0.5, 0.01))
+#' @export
+kosambi <- function(x){
+  y <- c()
+  if(max(x) >= 0.5) message('Maximum recombination rate is set to 0.5')
+  # theta -> Morgan
+  for (i in 1:length(x)){
+    theta <- min(x[i], 0.49999)
+    y[i] <- 1 / 4 * log((1 + 2 * theta)/(1 - 2 * theta))
+  }
+  y
+}
+
+#' @title Felsenstein's genetic map function
+#' @name felsenstein
+#' @description Calculation of genetic distances from recombination rates given
+#'   an interference parameter
+#' @param K parameter (numeric) corresponding to the intensity of crossover
+#'   interference
+#' @param x vector of recombination rates
+#' @return vector of genetic positions in Morgan units
+#' @references Felsenstein, J. (1979) A mathematically tractable family of
+#'   genetic mapping functions with different amounts of interference. Genetics
+#'   91:769-775.
+#' @examples
+#'   felsenstein(0.1, seq(0, 0.5, 0.01))
+#' @export
+felsenstein <- function(K,x){
+  y <- c()
+  if(max(x) >= 0.5) message('Maximum recombination rate is set to 0.5')
+  # theta -> Morgan
+  for(i in 1:length(x)){
+    theta <- min(x[i], 0.49999)
+    y[i] <- 1 / 2 / (K - 2) * log((1 - 2 * theta)/(1 - 2 * (K - 1) * theta))
+  }
+  y
+}
+
+
+#' @title Liberman and Karlin's genetic map function
+#' @name karlin
+#' @description Calculation of genetic distances from recombination rates given
+#'   a parameter
+#' @param N parameter (positive integer) required by the binomial model to
+#'   assess the count (of crossover) distribution; \code{N = 1} corresponds to
+#'   Morgan's map function
+#' @param x vector of recombination rates
+#' @return vector of genetic positions in Morgan units
+#' @references Liberman, U. & Karlin, S. (1984) Theoretical models of genetic
+#'   map functions. Theor Popul Biol 25:331-346.
+#' @examples
+#'   karlin(2, seq(0, 0.5, 0.01))
+#' @export
+karlin <- function(N,x){
+  if(N < 1) stop('Conflict model parameter, N >= 1')
+  y <- c()
+  if(max(x) >= 0.5) message('Maximum recombination rate is set to 0.5')
+  # theta -> Morgan
+  for (i in 1:length(x)){
+    theta <- min(x[i], 0.49999)
+    y[i] <- 0.5 * N * (1 - (1 - 2 * theta)^(1 / N))
+  }
+  y
+}
+
+
+
+#' @title Best fitting genetic-map function
 #' @name bestmapfun
 #' @description Approximation of mixing parameter of system of map functions
 #' @details The genetic mapping function that fits best to the genetic data
 #'   (recombination rate and genetic distances) is obtained from Rao's system of
-#'   mapping functions. The corresponding mixing parameter is estimated via
+#'   genetic-map functions. The corresponding mixing parameter is estimated via
 #'   1-dimensional constrained optimisation.
 #'   See vignette for its application to estimated data.
 #' @param theta vector of recombination rates

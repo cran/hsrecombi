@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{bestmapfun}
 \alias{bestmapfun}
-\title{Best fitting map function}
+\title{Best fitting genetic-map function}
 \usage{
 bestmapfun(theta, dist_M)
 }
@@ -24,7 +24,7 @@ Approximation of mixing parameter of system of map functions
 \details{
 The genetic mapping function that fits best to the genetic data
   (recombination rate and genetic distances) is obtained from Rao's system of
-  mapping functions. The corresponding mixing parameter is estimated via
+  genetic-map functions. The corresponding mixing parameter is estimated via
   1-dimensional constrained optimisation.
   See vignette for its application to estimated data.
 }

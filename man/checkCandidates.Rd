@@ -24,9 +24,9 @@ Search for SNPs with unusually large estimates of recombination
 }
 \details{
 Markers with unusually large estimates of recombination rate to
-  close SNPs are candidates for misplacements in the underlying assembly. The
+  close SNPs are candidates for misplacement in the underlying assembly. The
   mean of recombination rate estimates with \code{win} subsequent or
-  preceeding markers is calculated and those SNPs with mean value exceeding
+  preceding markers is calculated and those SNPs with mean value exceeding
   the \code{quant} quantile are denoted as candidates which have to be
   manually curated!
   This can be done, for instance, by visual inspection of a correlation plot

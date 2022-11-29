@@ -1,3 +1,9 @@
+# hsrecombi 0.5.0
+
+* option in makehap and makehappm to discard markers
+* sparse matrix format in function geneticPosition
+* more genetic-map functions for posterior checks
+
 # hsrecombi 0.4.2
 
 * minor bug fixes
