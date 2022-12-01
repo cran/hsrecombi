@@ -4,10 +4,13 @@
 \alias{kosambi}
 \title{Kosambi's genetic map function}
 \usage{
-kosambi(x)
+kosambi(x, inverse = F)
 }
 \arguments{
 \item{x}{vector of recombination rates}
+
+\item{inverse}{logical, if FALSE recombination rate is mapped to Morgan unit,
+if TRUE Morgan unit is mapped to recombination rate (default is FALSE)}
 }
 \value{
 vector of genetic positions in Morgan units

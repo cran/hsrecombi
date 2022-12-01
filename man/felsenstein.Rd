@@ -4,13 +4,16 @@
 \alias{felsenstein}
 \title{Felsenstein's genetic map function}
 \usage{
-felsenstein(K, x)
+felsenstein(K, x, inverse = F)
 }
 \arguments{
 \item{K}{parameter (numeric) corresponding to the intensity of crossover
 interference}
 
 \item{x}{vector of recombination rates}
+
+\item{inverse}{logical, if FALSE recombination rate is mapped to Morgan unit,
+if TRUE Morgan unit is mapped to recombination rate (default is FALSE)}
 }
 \value{
 vector of genetic positions in Morgan units

@@ -4,7 +4,7 @@
 \alias{karlin}
 \title{Liberman and Karlin's genetic map function}
 \usage{
-karlin(N, x)
+karlin(N, x, inverse = F)
 }
 \arguments{
 \item{N}{parameter (positive integer) required by the binomial model to
@@ -12,6 +12,9 @@ assess the count (of crossover) distribution; \code{N = 1} corresponds to
 Morgan's map function}
 
 \item{x}{vector of recombination rates}
+
+\item{inverse}{logical, if FALSE recombination rate is mapped to Morgan unit,
+if TRUE Morgan unit is mapped to recombination rate (default is FALSE)}
 }
 \value{
 vector of genetic positions in Morgan units

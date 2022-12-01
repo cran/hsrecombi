@@ -1,3 +1,7 @@
+# hsrecombi 0.5.1
+
+* inverse genetic map functions
+
 # hsrecombi 0.5.0
 
 * option in makehap and makehappm to discard markers

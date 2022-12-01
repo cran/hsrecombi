@@ -423,9 +423,14 @@ checkCandidates <- function(final, win = 30, quant = 0.99){
 #' @description Calculation of genetic distances from recombination rates given
 #'   a mixing parameter
 #' @details Mixing parameter \code{p=0} would match to Morgan, \code{p=0.25} to
-#'   Carter, \code{p=0.5} to Kosambi and \code{p=1} to Haldane map function
+#'   Carter, \code{p=0.5} to Kosambi and \code{p=1} to Haldane map function.
+#'   As an inverse of Rao's system of functions does not exist, NA will be
+#'   produced if \code{inverse = T}. To approximate the inverse call function
+#'   \code{rao.inv(p, x)}.
 #' @param p mixing parameter (see details); \code{0 <= p <= 1}
 #' @param x vector of recombination rates
+#' @param inverse logical, if FALSE recombination rate is mapped to Morgan unit,
+#'   if TRUE Morgan unit is mapped to recombination rate (default is FALSE)
 #' @return vector of genetic positions in Morgan units
 #' @references Rao, D.C., Morton, N.E., Lindsten, J., Hulten, M. & Yee, S (1977)
 #'   A mapping function for man. Human Heredity 27: 99-104.
@@ -433,24 +438,55 @@ checkCandidates <- function(final, win = 30, quant = 0.99){
 #' @examples
 #'   rao(0.25, seq(0, 0.5, 0.01))
 #' @export
-rao <- function(p, x){
+rao <- function(p, x, inverse = F){
   y <- c()
-  if(max(x) >= 0.5) message('Maximum recombination rate is set to 0.5')
-  # theta -> Morgan
-  for(i in 1:length(x)){
-    theta <- min(x[i], 0.49999)
-    y[i] <- (p * (2 * p - 1) * (1 - 4 * p) * log(1 - 2 * theta) +
-               16 * p * (p - 1) * (2 * p - 1) * atan(2 * theta) +
-               2 * p * (1 - p) * (8 * p + 2) * atanh(2 * theta) +
-               6 * (1 - p) * (1 - 2 * p) * (1 - 4 * p) * theta) / 6
+  if(inverse){ # Morgan -> theta
+    y <- rep(NA, length(x))
+  } else{ # theta -> Morgan
+    if(max(x) >= 0.5) message('Maximum recombination rate is set to 0.5')
+    for(i in 1:length(x)){
+      theta <- min(x[i], 0.5 - 1e-6)
+      y[i] <- (p * (2 * p - 1) * (1 - 4 * p) * log(1 - 2 * theta) +
+                 16 * p * (p - 1) * (2 * p - 1) * atan(2 * theta) +
+                 2 * p * (1 - p) * (8 * p + 2) * atanh(2 * theta) +
+                 6 * (1 - p) * (1 - 2 * p) * (1 - 4 * p) * theta) / 6
+    }
   }
   y
+}
+
+#' @title Approximation to inverse of Rao's system of map functions
+#' @name rao inverse
+#' @description Calculation of recombination rates from genetic distances given
+#'   a mixing parameter
+#' @details Mixing parameter \code{p=0} would match to Morgan, \code{p=0.25} to
+#'   Carter, \code{p=0.5} to Kosambi and \code{p=1} to Haldane map function.
+#' @param p mixing parameter (see details); \code{0 <= p <= 1}
+#' @param x vector in Morgan units
+#' @return vector of recombination rates
+#' @references Rao, D.C., Morton, N.E., Lindsten, J., Hulten, M. & Yee, S (1977)
+#'   A mapping function for man. Human Heredity 27: 99-104.
+#'   \doi{10.1159/000152856}
+#' @examples
+#'   rao.inv(0.25, seq(0, 01, 0.1))
+#' @export
+rao.inv <- function(p, x){ # Morgan -> theta
+  theta <- c()
+  for(i in 1:length(x)){
+    opt <- optim(par = 0.1, fn = function(th){(x[i] - rao(p, th))^2},
+                 method = 'Brent', lower = 0, upper = 0.49,
+                 control = list(reltol = 1e-5))
+    theta[i] <- opt$par
+  }
+  theta
 }
 
 #' @title Haldane's genetic map function
 #' @name haldane
 #' @description Calculation of genetic distances from recombination rates
 #' @param x vector of recombination rates
+#' @param inverse logical, if FALSE recombination rate is mapped to Morgan unit,
+#'   if TRUE Morgan unit is mapped to recombination rate (default is FALSE)
 #' @return vector of genetic positions in Morgan units
 #' @references Haldane JBS (1919) The combination of linkage values, and the
 #'   calculation of distances between the loci of linked factors. J Genet 8:
@@ -458,13 +494,18 @@ rao <- function(p, x){
 #' @examples
 #'   haldane(seq(0, 0.5, 0.01))
 #' @export
-haldane <- function(x){
+haldane <- function(x, inverse = F){
   y <- c()
-  if(max(x) >= 0.5) message('Maximum recombination rate is set to 0.5')
-  # theta -> Morgan
-  for (i in 1:length(x)){
-    theta <- min(x[i], 0.49999)
-    y[i] <- -0.5 * log(1 - 2 * theta)
+  if(inverse){ # Morgan -> theta
+    for (i in 1:length(x)){
+      y[i] <- 0.5 * (1 - exp(-2 * x[i]))
+    }
+  } else{ # theta -> Morgan
+    if(max(x) >= 0.5) message('Maximum recombination rate is set to 0.5')
+    for (i in 1:length(x)){
+      theta <- min(x[i], 0.5 - 1e-6)
+      y[i] <- -0.5 * log(1 - 2 * theta)
+    }
   }
   y
 }
@@ -473,19 +514,26 @@ haldane <- function(x){
 #' @name kosambi
 #' @description Calculation of genetic distances from recombination rates
 #' @param x vector of recombination rates
+#' @param inverse logical, if FALSE recombination rate is mapped to Morgan unit,
+#'   if TRUE Morgan unit is mapped to recombination rate (default is FALSE)
 #' @return vector of genetic positions in Morgan units
 #' @references Kosambi D.D. (1944) The estimation of map distance from
 #'   recombination values. Ann. Eugen. 12: 172-175.
 #' @examples
 #'   kosambi(seq(0, 0.5, 0.01))
 #' @export
-kosambi <- function(x){
+kosambi <- function(x, inverse = F){
   y <- c()
-  if(max(x) >= 0.5) message('Maximum recombination rate is set to 0.5')
-  # theta -> Morgan
-  for (i in 1:length(x)){
-    theta <- min(x[i], 0.49999)
-    y[i] <- 1 / 4 * log((1 + 2 * theta)/(1 - 2 * theta))
+  if(inverse){ # Morgan -> theta
+    for (i in 1:length(x)){
+      y[i] <- 0.5 * tanh(2 * x[i])
+    }
+  } else{ # theta -> Morgan
+    if(max(x) >= 0.5) message('Maximum recombination rate is set to 0.5')
+    for (i in 1:length(x)){
+      theta <- min(x[i], 0.5 - 1e-6)
+      y[i] <- 1 / 4 * log((1 + 2 * theta) / (1 - 2 * theta))
+    }
   }
   y
 }
@@ -497,6 +545,8 @@ kosambi <- function(x){
 #' @param K parameter (numeric) corresponding to the intensity of crossover
 #'   interference
 #' @param x vector of recombination rates
+#' @param inverse logical, if FALSE recombination rate is mapped to Morgan unit,
+#'   if TRUE Morgan unit is mapped to recombination rate (default is FALSE)
 #' @return vector of genetic positions in Morgan units
 #' @references Felsenstein, J. (1979) A mathematically tractable family of
 #'   genetic mapping functions with different amounts of interference. Genetics
@@ -504,17 +554,22 @@ kosambi <- function(x){
 #' @examples
 #'   felsenstein(0.1, seq(0, 0.5, 0.01))
 #' @export
-felsenstein <- function(K,x){
+felsenstein <- function(K, x, inverse = F){
   y <- c()
-  if(max(x) >= 0.5) message('Maximum recombination rate is set to 0.5')
-  # theta -> Morgan
-  for(i in 1:length(x)){
-    theta <- min(x[i], 0.49999)
-    y[i] <- 1 / 2 / (K - 2) * log((1 - 2 * theta)/(1 - 2 * (K - 1) * theta))
+  if(inverse){ # Morgan -> theta
+    for(i in 1:length(x)){
+      y[i] <- (1 - exp(2 * (K - 2) * x[i])) / 2 / (1 - (K - 1) *
+                                                     exp(2 * (K - 2) * x[i]))
+    }
+  } else{ # theta -> Morgan
+    if(max(x) >= 0.5) message('Maximum recombination rate is set to 0.5')
+    for(i in 1:length(x)){
+      theta <- min(x[i], 0.5 - 1e-6)
+      y[i] <- 1 / 2 / (K - 2) * log((1 - 2 * theta) / (1 - 2 * (K - 1) * theta))
+    }
   }
   y
 }
-
 
 #' @title Liberman and Karlin's genetic map function
 #' @name karlin
@@ -524,25 +579,29 @@ felsenstein <- function(K,x){
 #'   assess the count (of crossover) distribution; \code{N = 1} corresponds to
 #'   Morgan's map function
 #' @param x vector of recombination rates
+#' @param inverse logical, if FALSE recombination rate is mapped to Morgan unit,
+#'   if TRUE Morgan unit is mapped to recombination rate (default is FALSE)
 #' @return vector of genetic positions in Morgan units
 #' @references Liberman, U. & Karlin, S. (1984) Theoretical models of genetic
 #'   map functions. Theor Popul Biol 25:331-346.
 #' @examples
 #'   karlin(2, seq(0, 0.5, 0.01))
 #' @export
-karlin <- function(N,x){
-  if(N < 1) stop('Conflict model parameter, N >= 1')
+karlin <- function(N, x, inverse = F){
   y <- c()
-  if(max(x) >= 0.5) message('Maximum recombination rate is set to 0.5')
-  # theta -> Morgan
-  for (i in 1:length(x)){
-    theta <- min(x[i], 0.49999)
-    y[i] <- 0.5 * N * (1 - (1 - 2 * theta)^(1 / N))
+  if(inverse){ # Morgan -> theta
+    for (i in 1:length(x)){
+      y[i] <- ifelse(x[i] < N / 2, 0.5 * (1 - (1 - 2 * x[i] / N)^N), 1 / 2)
+    }
+  } else{ # theta -> Morgan
+    if(max(x) >= 0.5) message('Maximum recombination rate is set to 0.5')
+    for (i in 1:length(x)){
+      theta <- min(x[i], 0.5 - 1e-6)
+      y[i] <- 0.5 * N * (1 - (1 - 2 * theta)^(1 / N))
+    }
   }
   y
 }
-
-
 
 #' @title Best fitting genetic-map function
 #' @name bestmapfun

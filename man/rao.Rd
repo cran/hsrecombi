@@ -4,12 +4,15 @@
 \alias{rao}
 \title{System of genetic-map functions}
 \usage{
-rao(p, x)
+rao(p, x, inverse = F)
 }
 \arguments{
 \item{p}{mixing parameter (see details); \code{0 <= p <= 1}}
 
 \item{x}{vector of recombination rates}
+
+\item{inverse}{logical, if FALSE recombination rate is mapped to Morgan unit,
+if TRUE Morgan unit is mapped to recombination rate (default is FALSE)}
 }
 \value{
 vector of genetic positions in Morgan units
@@ -20,7 +23,10 @@ Calculation of genetic distances from recombination rates given
 }
 \details{
 Mixing parameter \code{p=0} would match to Morgan, \code{p=0.25} to
-  Carter, \code{p=0.5} to Kosambi and \code{p=1} to Haldane map function
+  Carter, \code{p=0.5} to Kosambi and \code{p=1} to Haldane map function.
+  As an inverse of Rao's system of functions does not exist, NA will be
+  produced if \code{inverse = T}. To approximate the inverse call function
+  \code{rao.inv(p, x)}.
 }
 \examples{
   rao(0.25, seq(0, 0.5, 0.01))
