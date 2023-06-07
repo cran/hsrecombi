@@ -4,21 +4,32 @@
 \alias{geneticPosition}
 \title{Estimation of genetic position}
 \usage{
-geneticPosition(final, exclude = NULL, threshold = 0.05)
+geneticPosition(final, map1, exclude = NULL, threshold = 0.05)
 }
 \arguments{
 \item{final}{table of results produced by \code{editraw} with pairwise
 estimates of recombination rate between p SNPs within chromosome; minimum
 required data frame with columns \code{SNP1}, \code{SNP2} and \code{theta}}
 
-\item{exclude}{optional vector (LEN q) of SNPs to be excluded (e.g.,
-candidates of misplaced SNPs)}
+\item{map1}{data.frame containing information on physical map, at least:
+\describe{
+ \item{\code{SNP}}{SNP ID}
+ \item{\code{locus_Mb}}{physical position in Mbp of SNP on chromosomes}
+ \item{\code{Chr}}{chromosome of SNP}
+}}
+
+\item{exclude}{optional vector (LEN < p) of SNP IDs to be excluded (e.g.,
+candidates of misplaced SNPs; default NULL)}
 
 \item{threshold}{optional value; recombination rates <= threshold are
-considered for smoothing}
+considered for smoothing approach assuming theta ~ Morgan (default 0.05)}
 }
 \value{
-vector (LEN p) of genetic positions of SNPs (in cM)
+list (LEN 2)
+\describe{
+  \item{gen.cM}{vector (LEN p) of genetic positions of SNPs (in cM)}
+  \item{gen.Mb}{vector (LEN p) of physical positions of SNPs (in Mbp)}
+}
 }
 \description{
 Estimation of genetic positions (in centi Morgan)
@@ -43,11 +54,11 @@ Smoothing of recombination rates (theta) <= 0.05 via quadratic
   ### make list for paternal half-sib families
   hap <- makehaplist(daughterSire, hapSire)
   ### parameter estimates on a chromosome
-  res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
+  res <- hsrecombi(hap, genotype.chr)
   ### post-processing to achieve final and valid set of estimates
   final <- editraw(res, map.chr)
   ### approximation of genetic positions
-  pos <- geneticPosition(final)
+  pos <- geneticPosition(final, map.chr)
 }
 \references{
 Qanbari, S. & Wittenburg, D. (2020) Male recombination map of the autosomal

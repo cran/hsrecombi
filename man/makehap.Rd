@@ -11,8 +11,8 @@ makehap(sireID, daughterSire, genotype.chr, nmin = 30, exclude = NULL)
 
 \item{daughterSire}{vector (LEN n) of sire ID for each progeny}
 
-\item{genotype.chr}{matrix (DIM n x p) of progeny genotypes on a single
-chromosome with p SNPs}
+\item{genotype.chr}{matrix (DIM n x p) of progeny genotypes (0, 1, 2) on a
+single chromosome with p SNPs; 9 indicates missing genotype}
 
 \item{nmin}{scalar, minimum required number of progeny for proper imputation,
 default 30}

@@ -40,14 +40,17 @@ X <- as.matrix(read.table(file.path(path, 'XFam-ARS.txt')))
 map <- read.table(file.path(path, 'map50K_ARS_reordered.txt'), header = T)
 ## select target region
 chr <- 1
-window <- 301:600
+window <- 301:500
 ## map information of target region
-map.chr <- map[map$Chr == chr, ][window, 1:5]
+map.chr <- map[map$Chr == chr, ][window, ]
 ## matrix of sire haplotypes in target region
 hapSire <- rlist::list.rbind(haps[[chr]])
 sireID <- 1:length(unique(daughterSire))
 hapSire <- cbind(rep(sireID, each = 2), hapSire[, window])
 ## matrix of progeny genotypes
 genotype.chr <- X[, map.chr$SNP]
+colnames(genotype.chr) <- map.chr$SNP
+save(list = c('genotype.chr', 'hapSire', 'map.chr', 'daughterSire'),
+     file = 'targetregion.RData', compress = 'xz')
 }
 }

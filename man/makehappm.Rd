@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{makehappm}
 \alias{makehappm}
-\title{Make list of imputed haplotypes and recombination rate}
+\title{Make list of imputed haplotypes and estimate recombination rate}
 \usage{
 makehappm(sireID, daughterSire, genotype.chr, nmin = 30, exclude = NULL)
 }
@@ -11,16 +11,17 @@ makehappm(sireID, daughterSire, genotype.chr, nmin = 30, exclude = NULL)
 
 \item{daughterSire}{vector (LEN n) of sire ID for each progeny}
 
-\item{genotype.chr}{matrix (DIM n x p) of progeny genotypes on a single
-chromosome with p SNPs}
+\item{genotype.chr}{matrix (DIM n x p) of progeny genotypes (0, 1, 2) on a
+single chromosome with p SNPs; 9 indicates missing genotype}
 
 \item{nmin}{scalar, minimum required number of progeny for proper imputation,
 default 30}
 
-\item{exclude}{vector (LEN < p) of SNP indices to be excluded from analysis}
+\item{exclude}{vector (LEN < p) of SNP IDs (for filtering column names of
+\code{genotype.chr)} to be excluded from analysis}
 }
 \value{
-hap list (LEN 2) of lists. For each sire:
+list (LEN 2) of lists. For each sire:
 \describe{
   \item{\code{famID}}{list (LEN N) of vectors (LEN n.progeny) of progeny
    indices relating to lines in genotype matrix}
@@ -30,6 +31,7 @@ hap list (LEN 2) of lists. For each sire:
    all families between adjacent SNPs}
  \item{numberRec}{list (LEN N) of vectors (LEN n.progeny) of number of
    recombination events per animal}
+ \item{gen}{vector (LEN p) of genetic positions of SNPs (in cM)}
 }
 }
 \description{
@@ -40,7 +42,7 @@ List of sire haplotypes is set up in the format required for
 }
 \examples{
   data(targetregion)
-  hap <- makehappm(unique(daughterSire), daughterSire, genotype.chr)
+  hap <- makehappm(unique(daughterSire), daughterSire, genotype.chr, exclude = paste0('V', 301:310))
 }
 \references{
 Ferdosi, M., Kinghorn, B., van der Werf, J., Lee, S. & Gondro, C. (2014)

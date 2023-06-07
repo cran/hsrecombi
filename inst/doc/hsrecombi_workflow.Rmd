@@ -28,7 +28,7 @@ Required input files for Part II:
 * map files for each chromosome `map_chr<chr>.map`
 * data files for each chromosome `hsphase_input_chr<chr>.raw`
 
-**Note:** A pipeline is available at [GitHub](https://github.com/wittenburg/hsrecombi).
+**Note:** A make pipeline for the main analysis (Part II) is available at [GitHub](https://github.com/wittenburg/hsrecombi).
 
 ```{r setup}
 library(hsrecombi) 
@@ -86,7 +86,7 @@ for(chr in 1:nchr){
   probRec[[chr]] <- colMeans(co.pat)
 }
 
-save(list = c('SP', 'founderPop', 'pop', 'my_pop', 'ntotal', 'probRec'), file = 'data/pop.RData')
+save(list = c('SP', 'founderPop', 'pop', 'my_pop', 'ntotal', 'probRec'), file = 'data/pop.Rdata')
 ```
 
 Two chromosomes, each with $p$ SNPs and 1 Morgan length, are simulated. The founder population consists of 1\,000 animals with equal gender distribution. The follow-up generation consists of $N$ paternal-half sib families with equal number of progeny $n$. The study design with the equal number of progeny per family was preferred here for simplicity but this is not required in the subsequent steps.
@@ -137,13 +137,12 @@ registerDoParallel(cl)
 out <- foreach(chr = 1:nchr, .packages = 'hsrecombi') %dopar% {
   
   # 1: Physical  map
-  map <- read.table(file.path(path.dat, paste0('map_chr', chr, '.map')), col.names = c('Chr', 'Name', 'locus_Mb', 'locus_bp'))
-  map$SNP <- 1:nrow(map)
-  locus_Mb <- map$locus_Mb
-
+  map <- read.table(file.path(path.dat, paste0('map_chr', chr, '.map')), col.names = c('Chr', 'SNP', 'locus_Mb', 'locus_bp'))
+ 
   # 2: Genotype matrix
   genomatrix <- data.table::fread(file.path(path.dat, paste0('hsphase_input_chr', chr, '.raw')))
   X <- as.matrix(genomatrix[, -c(1:6)])
+  X[is.na(X)] <- 9 # required for hsphase
   
   # 3: Assign daughters to sire IDs
   daughterSire <- genomatrix$PAT
@@ -153,13 +152,13 @@ out <- foreach(chr = 1:nchr, .packages = 'hsrecombi') %dopar% {
   save('hap', file = file.path(path.res, paste0('hsphase_output_chr', chr, '.Rdata')))
   
   # Check order and dimension
-  io <- sapply(1:nrow(map), function(z){grepl(x = colnames(X)[z], pattern = map$Name[z])})
+  io <- sapply(1:nrow(map), function(z){grepl(x = colnames(X)[z], pattern = map$SNP[z])})
   if(sum(io) != nrow(map)) stop("ERROR in dimension")
   
   # 5: Estimate recombination rates
-  res <- hsrecombi(hap, X, map$SNP)
+  res <- hsrecombi(hap, X)
   final <- editraw(res, map)
-  save(list = c('final', 'locus_Mb'), file = file.path(path.res, paste0("Results_chr", chr, ".RData")))
+  save(list = c('final', 'map'), file = file.path(path.res, paste0("Results_chr", chr, ".Rdata")))
   
   ifelse(nrow(final) > 0, 'OK', 'no result')
 }
@@ -172,18 +171,20 @@ In step 4, function `makehap` would be sufficient but `makehappm` allows compari
 ```{r misplaced}
 # 6a: Filter SNPs with unusually large recombination rate to neighbouring (30) SNPs
 excl <- foreach(chr = 1:nchr, .packages = 'hsrecombi') %dopar% {
-  load(file.path(path.res, paste0("Results_chr", chr, ".RData")))
-  checkCandidates(final)
+  load(file.path(path.res, paste0("Results_chr", chr, ".Rdata")))
+  checkCandidates(final, map)
 }
 
 # 6b: Heatmap plot of recombination rates for visual verification, e.g.:
 chr <- 2
-load(file.path(path.res, paste0("Results_chr", chr, ".RData")))
+load(file.path(path.res, paste0("Results_chr", chr, ".Rdata")))
 cand <- excl[[chr]][1]
-win <- cand + (-100:100)
-win <- win[(win >= 1) & (win <= max(final$SNP2))]
+win <- match(cand, map$SNP) + (-100:100)
+win <- win[(win >= 1) & (win <= nrow(map))]
 
-target <- final[(final$SNP1 %in% win) & (final$SNP2 %in% win), ]
+target <- final[(final$SNP1 %in% map$SNP[win]) & (final$SNP2 %in% map$SNP[win]), ]
+target$SNP1 <- match(target$SNP1, map$SNP)
+target$SNP2 <- match(target$SNP2, map$SNP)
 
 ggplot(data = target, aes(SNP2, SNP1, fill = theta)) + 
   geom_tile() +
@@ -192,7 +193,7 @@ ggplot(data = target, aes(SNP2, SNP1, fill = theta)) +
   coord_equal() + 
   scale_y_continuous(trans = "reverse") +
   theme(panel.background = element_blank(), 
-        panel.grid.major = element_line(colour = "grey", size = 0.1),
+        panel.grid.major = element_line(colour = "grey", linewidth = 0.1),
         panel.grid.minor = element_line(colour = "grey")) +
   theme(text = element_text(size = 18)) +
   scale_fill_gradientn(colours = c('yellow', 'red'), limits = c(0, 1+1e-10), na.value = 'white')
@@ -207,9 +208,8 @@ Orange colour in the SNP neighbourhood implies an increased recombination rate. 
 
 ```{r genetic-position}
 pos <- foreach(chr = 1:nchr, .packages = 'hsrecombi') %dopar% {
-  load(file.path(path.res, paste0("Results_chr", chr, ".RData")))
-  out <- geneticPosition(final, exclude = excl[[chr]])
-  list(pos.cM = c(out, rep(NA, length(locus_Mb) - length(out))), pos.Mb = locus_Mb)
+  load(file.path(path.res, paste0("Results_chr", chr, ".Rdata")))
+  geneticPosition(final, map, exclude = excl[[chr]])
 }
 ```
 
@@ -241,7 +241,7 @@ f(\theta; p) = \frac{1}{6}(p(2p - 1)(1 - 4p) log(1 - 2\theta) +
 $$
 ```{r plot-2}
 for (chr in 1:nchr) {
-  load(file.path(path.res, paste0("Results_chr", chr, ".RData")))
+  load(file.path(path.res, paste0("Results_chr", chr, ".Rdata")))
   final$theta[(final$SNP1 %in% excl[[chr]]) | (final$SNP2 %in% excl[[chr]])] <- NA
   final$dist_M <- (pos[[chr]]$pos.cM[final$SNP2] - pos[[chr]]$pos.cM[final$SNP1]) / 100
   out <- bestmapfun(theta = final$theta, dist_M = final$dist_M)
@@ -262,7 +262,7 @@ chr <- 2
 ### 1: Check with simulated data
 
 ```{r check-simulated}
-load(file.path(path.dat, 'pop.RData'))
+load(file.path(path.dat, 'pop.Rdata'))
 sim.cM <- cumsum(probRec[[chr]]) * 100
 ```
 The position of a recombination event is traced in `SP$recHist` which has a nested list structure (individual, chromosome, female/male haplotype). The recombination rate between adjacent SNPs is determined as the proportion of recombinant progeny and the positions are derived as cumulative sum over recombination rates.
@@ -271,7 +271,7 @@ The position of a recombination event is traced in `SP$recHist` which has a nest
 
 ```{r check-deterministic}
 load(file.path(path.res, paste0('hsphase_output_chr', chr, '.Rdata')))
-hsphase.cM <- c(0, cumsum(hap$probRec)) * 100
+hsphase.cM <- hap$gen
 ```
 
 The results are compared to the deterministic approach of [Ferdosi et al. (2014)](https://doi.org/10.1186/1297-9686-46-11) provided in the R package [*hsphase*]( https://CRAN.R-project.org/package=hsphase). Functions of that package are called in `makehap` and `makehappm`.

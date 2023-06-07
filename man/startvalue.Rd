@@ -7,11 +7,11 @@
 startvalue(Fam1, Fam2, Dd = 0, prec = 1e-06)
 }
 \arguments{
-\item{Fam1}{matrix (DIM n.progeny x 2) of progeny genotypes of genomic family
-with coupling phase sires (1) at SNP pair}
+\item{Fam1}{matrix (DIM n.progeny x 2) of progeny genotypes (0, 1, 2) of
+genomic family with coupling phase sires (1) at SNP pair}
 
-\item{Fam2}{matrix (DIM n.progeny x 2) of progeny genotypes of genomic family
-with repulsion phase sires (2) at SNP pair}
+\item{Fam2}{matrix (DIM n.progeny x 2) of progeny genotypes (0, 1, 2) of
+genomic family with repulsion phase sires (2) at SNP pair}
 
 \item{Dd}{maternal LD, default 0}
 

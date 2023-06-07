@@ -105,15 +105,15 @@ List LDHScpp(Nullable<IntegerMatrix> XGF1,
 
   if (XGF1.isNotNull()){
     IntegerMatrix fam1 = as<IntegerMatrix>(XGF1);
-    nfam1 = fam1.nrow();
     n1 = countNumbers(fam1);
+    nfam1 = sum(n1);
     if(display) Rcout << n1 << "\n";
     if(fam1.ncol() > 2) Rcout << "WARNING: only the first two columns of *genomic family 1* will be used \n";
   }
   if (XGF2.isNotNull()){
     IntegerMatrix fam2 = as<IntegerMatrix>(XGF2);
-    nfam2 = fam2.nrow();
     n2 = countNumbers(fam2);
+    nfam2 = sum(n2);
     if(display) Rcout << n2 << "\n";
     if(fam2.ncol() > 2) Rcout << "WARNING: only the first two columns of *genomic family 2* will be used \n";
   }

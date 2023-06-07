@@ -5,7 +5,7 @@
 \alias{genotype.chr}
 \title{targetregion: progeny genotypes}
 \format{
-An object of class \code{matrix} (inherits from \code{array}) with 265 rows and 300 columns.
+An object of class \code{matrix} (inherits from \code{array}) with 265 rows and 200 columns.
 }
 \usage{
 genotype.chr

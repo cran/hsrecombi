@@ -4,19 +4,26 @@
 \alias{checkCandidates}
 \title{Candidates for misplacement}
 \usage{
-checkCandidates(final, win = 30, quant = 0.99)
+checkCandidates(final, map1, win = 30, quant = 0.99)
 }
 \arguments{
 \item{final}{table of results produced by \code{editraw} with pairwise
 estimates of recombination rate between p SNPs within chromosome; minimum
 required data frame with columns \code{SNP1}, \code{SNP2} and \code{theta}}
 
+\item{map1}{data.frame containing information on physical map, at least:
+\describe{
+ \item{\code{SNP}}{SNP ID}
+ \item{\code{locus_Mb}}{physical position in Mbp of SNP on chromosomes}
+ \item{\code{Chr}}{chromosome of SNP}
+}}
+
 \item{win}{optional value for window size; default value 30}
 
 \item{quant}{optional value; default value 0.99, see details}
 }
 \value{
-vector of SNP indices for further verification
+vector of SNP IDs for further verification
 }
 \description{
 Search for SNPs with unusually large estimates of recombination
@@ -38,11 +45,11 @@ Markers with unusually large estimates of recombination rate to
   ### make list for paternal half-sib families
   hap <- makehaplist(daughterSire, hapSire)
   ### parameter estimates on a chromosome
-  res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
+  res <- hsrecombi(hap, genotype.chr)
   ### post-processing to achieve final and valid set of estimates
   final <- editraw(res, map.chr)
   ### check for candidates of misplacement
-  snp <- checkCandidates(final)
+  snp <- checkCandidates(final, map.chr)
 }
 \references{
 Hampel, A., Teuscher, F., Gomez-Raya, L., Doschoris, M. & Wittenburg, D.

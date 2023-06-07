@@ -1,3 +1,18 @@
+# hsrecombi 1.0.1
+
+* reduction of test data
+
+# hsrecombi 1.0.0
+
+* non-numeric SNP IDs
+* revision of function hsrecombi (altered list of arguments)
+* revision of functions geneticPosition and makehappm to provide final genetic maps
+
+# hsrecombi 0.6.0
+
+* handling of missing genotypes
+* revision of help files
+
 # hsrecombi 0.5.1
 
 * inverse genetic map functions

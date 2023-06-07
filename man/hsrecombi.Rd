@@ -4,7 +4,7 @@
 \alias{hsrecombi}
 \title{Estimation of recombination rate and maternal LD}
 \usage{
-hsrecombi(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-06)
+hsrecombi(hap, genotype.chr, exclude = NULL, only.adj = FALSE, prec = 1e-06)
 }
 \arguments{
 \item{hap}{list (LEN 2) of lists
@@ -16,9 +16,10 @@ hsrecombi(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-06)
 }}
 
 \item{genotype.chr}{matrix (DIM n x p) of all progeny genotypes (0, 1, 2) on
-a chromosome with p SNPs}
+a chromosome with p SNPs; 9 indicates missing genotype}
 
-\item{snp.chr}{vector(LEN p) of SNP indices or names as in physical map}
+\item{exclude}{vector (LEN < p) of SNP IDs (for filtering column names of
+\code{genotype.chr)} to be excluded from analysis (default NULL)}
 
 \item{only.adj}{logical; if \code{TRUE}, recombination rate is calculated
 only between neighbouring markers}
@@ -30,8 +31,8 @@ list (LEN p - 1) of data.frames; for each SNP, parameters are
   estimated with all following SNPs; two solutions (prefix sln1 and sln2) are
   obtained for two runs of the EM algorithm
 \describe{
-  \item{\code{SNP1}}{index 1. SNP}
-  \item{\code{SNP2}}{index 2. SNP}
+  \item{\code{SNP1}}{ID of 1. SNP}
+  \item{\code{SNP2}}{ID of 2. SNP}
   \item{\code{D}}{maternal LD}
   \item{\code{fAA}}{frequency of maternal haplotype 1-1}
   \item{\code{fAB}}{frequency of maternal haplotype 1-0}
@@ -79,7 +80,7 @@ Paternal recombination rate and maternal linkage disequilibrium (LD)
   ### make list for paternal half-sib families
   hap <- makehaplist(daughterSire, hapSire)
   ### parameter estimates on a chromosome
-  res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
+  res <- hsrecombi(hap, genotype.chr)
   ### post-processing to achieve final and valid set of estimates
   final <- editraw(res, map.chr)
 }

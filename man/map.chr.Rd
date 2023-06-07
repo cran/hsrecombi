@@ -5,7 +5,7 @@
 \alias{map.chr}
 \title{targetregion: physical map}
 \format{
-An object of class \code{data.frame} with 300 rows and 5 columns.
+An object of class \code{data.frame} with 200 rows and 6 columns.
 }
 \usage{
 map.chr

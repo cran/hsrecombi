@@ -5,7 +5,7 @@
 \alias{hapSire}
 \title{targetregion: sire haplotypes}
 \format{
-An object of class \code{matrix} (inherits from \code{array}) with 10 rows and 301 columns.
+An object of class \code{matrix} (inherits from \code{array}) with 10 rows and 201 columns.
 }
 \usage{
 hapSire

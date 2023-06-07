@@ -21,8 +21,9 @@
 #'    of sire haplotypes (0, 1) on investigated chromosome}
 #' }
 #' @param genotype.chr matrix (DIM n x p) of all progeny genotypes (0, 1, 2) on
-#'   a chromosome with p SNPs
-#' @param snp.chr vector(LEN p) of SNP indices or names as in physical map
+#'   a chromosome with p SNPs; 9 indicates missing genotype
+#' @param exclude vector (LEN < p) of SNP IDs (for filtering column names of
+#'   \code{genotype.chr)} to be excluded from analysis (default NULL)
 #' @param only.adj logical; if \code{TRUE}, recombination rate is calculated
 #'   only between neighbouring markers
 #' @param prec scalar; precision of estimation
@@ -30,8 +31,8 @@
 #'   estimated with all following SNPs; two solutions (prefix sln1 and sln2) are
 #'   obtained for two runs of the EM algorithm
 #' \describe{
-#'   \item{\code{SNP1}}{index 1. SNP}
-#'   \item{\code{SNP2}}{index 2. SNP}
+#'   \item{\code{SNP1}}{ID of 1. SNP}
+#'   \item{\code{SNP2}}{ID of 2. SNP}
 #'   \item{\code{D}}{maternal LD}
 #'   \item{\code{fAA}}{frequency of maternal haplotype 1-1}
 #'   \item{\code{fAB}}{frequency of maternal haplotype 1-0}
@@ -61,7 +62,7 @@
 #'   ### make list for paternal half-sib families
 #'   hap <- makehaplist(daughterSire, hapSire)
 #'   ### parameter estimates on a chromosome
-#'   res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
+#'   res <- hsrecombi(hap, genotype.chr)
 #'   ### post-processing to achieve final and valid set of estimates
 #'   final <- editraw(res, map.chr)
 #' @references
@@ -76,10 +77,13 @@
 #' @importFrom rlist list.rbind
 #' @useDynLib hsrecombi
 #' @export
-hsrecombi <- function(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-6){
+hsrecombi <- function(hap, genotype.chr, exclude = NULL, only.adj = FALSE, prec = 1e-6){
 
-  if((length(snp.chr) != ncol(genotype.chr)) | (length(snp.chr) != ncol(hap$sireHap[[1]]))) stop('ERROR: inconsistency in number of SNPs')
-  if(!all(genotype.chr %in% c(0, 1, 2))) stop('ERROR: coding of genotypes must be 0, 1, 2')
+  if(ncol(genotype.chr) != ncol(hap$sireHap[[1]])) stop('ERROR: inconsistency in number of SNPs')
+  if(!all(genotype.chr %in% c(0, 1, 2, 9))) stop('ERROR: coding of genotypes must be 0, 1, 2, 9')
+
+  coln <- colnames(genotype.chr)
+  snp.chr <- which(!(coln %in% exclude))
 
   ls <- lapply(1:(length(snp.chr) - 1), function(j){
 
@@ -129,7 +133,10 @@ hsrecombi <- function(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-6)
       } else NULL
 
     })
-    data.frame(rlist::list.rbind(out))
+    out <- data.frame(rlist::list.rbind(out))
+    out$SNP1 <- coln[out$SNP1]
+    out$SNP2 <- coln[out$SNP2]
+    out
   })
   return(ls)
 }
@@ -154,11 +161,21 @@ hsrecombi <- function(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-6)
 #' @param final table of results produced by \code{editraw} with pairwise
 #'   estimates of recombination rate between p SNPs within chromosome; minimum
 #'   required data frame with columns \code{SNP1}, \code{SNP2} and \code{theta}
-#' @param exclude optional vector (LEN q) of SNPs to be excluded (e.g.,
-#'   candidates of misplaced SNPs)
+#' @param map1 data.frame containing information on physical map, at least:
+#' \describe{
+#'  \item{\code{SNP}}{SNP ID}
+#'  \item{\code{locus_Mb}}{physical position in Mbp of SNP on chromosomes}
+#'  \item{\code{Chr}}{chromosome of SNP}
+#' }
+#' @param exclude optional vector (LEN < p) of SNP IDs to be excluded (e.g.,
+#'   candidates of misplaced SNPs; default NULL)
 #' @param threshold optional value; recombination rates <= threshold are
-#'   considered for smoothing
-#' @return vector (LEN p) of genetic positions of SNPs (in cM)
+#'   considered for smoothing approach assuming theta ~ Morgan (default 0.05)
+#' @return list (LEN 2)
+#' \describe{
+#'   \item{gen.cM}{vector (LEN p) of genetic positions of SNPs (in cM)}
+#'   \item{gen.Mb}{vector (LEN p) of physical positions of SNPs (in Mbp)}
+#' }
 #' @references
 #'  Qanbari, S. & Wittenburg, D. (2020) Male recombination map of the autosomal
 #'  genome in German Holstein. Genetics Selection Evolution 52:73.
@@ -170,25 +187,27 @@ hsrecombi <- function(hap, genotype.chr, snp.chr, only.adj = FALSE, prec = 1e-6)
 #'   ### make list for paternal half-sib families
 #'   hap <- makehaplist(daughterSire, hapSire)
 #'   ### parameter estimates on a chromosome
-#'   res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
+#'   res <- hsrecombi(hap, genotype.chr)
 #'   ### post-processing to achieve final and valid set of estimates
 #'   final <- editraw(res, map.chr)
 #'   ### approximation of genetic positions
-#'   pos <- geneticPosition(final)
+#'   pos <- geneticPosition(final, map.chr)
 #' @import Matrix
 #' @importFrom rlist list.select
 #' @importFrom quadprog solve.QP
 #' @export
-geneticPosition <- function(final, exclude = NULL, threshold = 0.05){
+geneticPosition <- function(final, map1, exclude = NULL, threshold = 0.05){
   part <- final[(final$theta <= threshold) & (final$theta >= 1e-5) &
                   !(final$SNP1 %in% exclude) & !(final$SNP2 %in% exclude), ]
-  mini <- min(part$SNP1)
-  p <- max(part$SNP2) - mini + 1
+  part$ID1 <- match(part$SNP1, map1$SNP)
+  part$ID2 <- match(part$SNP2, map1$SNP)
+  mini <- min(part$ID1)
+  p <- max(part$ID2) - mini + 1
 
   ## quadratic optimization min(theta - D d)² s.t. d > 0
   # set up D matrix
   out <-  lapply(1:nrow(part), function(i){
-    vec.j <- (part$SNP1[i] - mini + 1):(part$SNP2[i] - mini)
+    vec.j <- (part$ID1[i] - mini + 1):(part$ID2[i] - mini)
     vec.i <- rep(i, length(vec.j))
     list(vec.i = vec.i, vec.j = vec.j)
   })
@@ -202,13 +221,17 @@ geneticPosition <- function(final, exclude = NULL, threshold = 0.05){
   Dmat <- crossprod(D) + diag(nrow = p - 1, x = 1e-6)
 
   sln <- solve.QP(Dmat, dvec, Amat)
-  gen <- c(0, cumsum(sln$solution)) * 100
+  # due to numerics in optimization approach (although constraints have been defined)
+  sln$solution[sln$solution < 0] <- 0
+  gen.cM <- c(0, cumsum(sln$solution)) * 100
 
-  if(mini > 1) gen <- c(rep(NA, mini - 1), gen)
-  names(gen) <- 1:max(part$SNP2)
+  gen <- rep(NA, nrow(map1))
+  id <- seq(from = min(part$ID1), to = max(part$ID2))
+  gen[id] <- gen.cM
+  names(gen) <- map1$SNP
   id <- unique(c(part$SNP1, part$SNP2))
   gen[!(names(gen) %in% id)] <- NA
 
-  return(gen)
+  return(list(pos.cM = gen, pos.Mb = map1$locus_Mb))
 }
 

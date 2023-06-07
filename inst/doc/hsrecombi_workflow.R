@@ -54,7 +54,7 @@ for(chr in 1:nchr){
   probRec[[chr]] <- colMeans(co.pat)
 }
 
-save(list = c('SP', 'founderPop', 'pop', 'my_pop', 'ntotal', 'probRec'), file = 'data/pop.RData')
+save(list = c('SP', 'founderPop', 'pop', 'my_pop', 'ntotal', 'probRec'), file = 'data/pop.Rdata')
 
 ## ----genetic-data-------------------------------------------------------------
 PAT <- my_pop@father
@@ -92,13 +92,12 @@ registerDoParallel(cl)
 out <- foreach(chr = 1:nchr, .packages = 'hsrecombi') %dopar% {
   
   # 1: Physical  map
-  map <- read.table(file.path(path.dat, paste0('map_chr', chr, '.map')), col.names = c('Chr', 'Name', 'locus_Mb', 'locus_bp'))
-  map$SNP <- 1:nrow(map)
-  locus_Mb <- map$locus_Mb
-
+  map <- read.table(file.path(path.dat, paste0('map_chr', chr, '.map')), col.names = c('Chr', 'SNP', 'locus_Mb', 'locus_bp'))
+ 
   # 2: Genotype matrix
   genomatrix <- data.table::fread(file.path(path.dat, paste0('hsphase_input_chr', chr, '.raw')))
   X <- as.matrix(genomatrix[, -c(1:6)])
+  X[is.na(X)] <- 9 # required for hsphase
   
   # 3: Assign daughters to sire IDs
   daughterSire <- genomatrix$PAT
@@ -108,13 +107,13 @@ out <- foreach(chr = 1:nchr, .packages = 'hsrecombi') %dopar% {
   save('hap', file = file.path(path.res, paste0('hsphase_output_chr', chr, '.Rdata')))
   
   # Check order and dimension
-  io <- sapply(1:nrow(map), function(z){grepl(x = colnames(X)[z], pattern = map$Name[z])})
+  io <- sapply(1:nrow(map), function(z){grepl(x = colnames(X)[z], pattern = map$SNP[z])})
   if(sum(io) != nrow(map)) stop("ERROR in dimension")
   
   # 5: Estimate recombination rates
-  res <- hsrecombi(hap, X, map$SNP)
+  res <- hsrecombi(hap, X)
   final <- editraw(res, map)
-  save(list = c('final', 'locus_Mb'), file = file.path(path.res, paste0("Results_chr", chr, ".RData")))
+  save(list = c('final', 'map'), file = file.path(path.res, paste0("Results_chr", chr, ".Rdata")))
   
   ifelse(nrow(final) > 0, 'OK', 'no result')
 }
@@ -123,18 +122,20 @@ print(which(unlist(out) == 'OK'))
 ## ----misplaced----------------------------------------------------------------
 # 6a: Filter SNPs with unusually large recombination rate to neighbouring (30) SNPs
 excl <- foreach(chr = 1:nchr, .packages = 'hsrecombi') %dopar% {
-  load(file.path(path.res, paste0("Results_chr", chr, ".RData")))
-  checkCandidates(final)
+  load(file.path(path.res, paste0("Results_chr", chr, ".Rdata")))
+  checkCandidates(final, map)
 }
 
 # 6b: Heatmap plot of recombination rates for visual verification, e.g.:
 chr <- 2
-load(file.path(path.res, paste0("Results_chr", chr, ".RData")))
+load(file.path(path.res, paste0("Results_chr", chr, ".Rdata")))
 cand <- excl[[chr]][1]
-win <- cand + (-100:100)
-win <- win[(win >= 1) & (win <= max(final$SNP2))]
+win <- match(cand, map$SNP) + (-100:100)
+win <- win[(win >= 1) & (win <= nrow(map))]
 
-target <- final[(final$SNP1 %in% win) & (final$SNP2 %in% win), ]
+target <- final[(final$SNP1 %in% map$SNP[win]) & (final$SNP2 %in% map$SNP[win]), ]
+target$SNP1 <- match(target$SNP1, map$SNP)
+target$SNP2 <- match(target$SNP2, map$SNP)
 
 ggplot(data = target, aes(SNP2, SNP1, fill = theta)) + 
   geom_tile() +
@@ -143,7 +144,7 @@ ggplot(data = target, aes(SNP2, SNP1, fill = theta)) +
   coord_equal() + 
   scale_y_continuous(trans = "reverse") +
   theme(panel.background = element_blank(), 
-        panel.grid.major = element_line(colour = "grey", size = 0.1),
+        panel.grid.major = element_line(colour = "grey", linewidth = 0.1),
         panel.grid.minor = element_line(colour = "grey")) +
   theme(text = element_text(size = 18)) +
   scale_fill_gradientn(colours = c('yellow', 'red'), limits = c(0, 1+1e-10), na.value = 'white')
@@ -153,9 +154,8 @@ excl[[1]] <- excl[[2]] <- NA
 
 ## ----genetic-position---------------------------------------------------------
 pos <- foreach(chr = 1:nchr, .packages = 'hsrecombi') %dopar% {
-  load(file.path(path.res, paste0("Results_chr", chr, ".RData")))
-  out <- geneticPosition(final, exclude = excl[[chr]])
-  list(pos.cM = c(out, rep(NA, length(locus_Mb) - length(out))), pos.Mb = locus_Mb)
+  load(file.path(path.res, paste0("Results_chr", chr, ".Rdata")))
+  geneticPosition(final, map, exclude = excl[[chr]])
 }
 
 ## ----stop-parallel------------------------------------------------------------
@@ -168,7 +168,7 @@ ggplot(data, aes(x = Mbp, y = cM)) + geom_point(na.rm = T) + facet_grid(Chr ~ .)
 
 ## ----plot-2-------------------------------------------------------------------
 for (chr in 1:nchr) {
-  load(file.path(path.res, paste0("Results_chr", chr, ".RData")))
+  load(file.path(path.res, paste0("Results_chr", chr, ".Rdata")))
   final$theta[(final$SNP1 %in% excl[[chr]]) | (final$SNP2 %in% excl[[chr]])] <- NA
   final$dist_M <- (pos[[chr]]$pos.cM[final$SNP2] - pos[[chr]]$pos.cM[final$SNP1]) / 100
   out <- bestmapfun(theta = final$theta, dist_M = final$dist_M)
@@ -181,12 +181,12 @@ for (chr in 1:nchr) {
 chr <- 2
 
 ## ----check-simulated----------------------------------------------------------
-load(file.path(path.dat, 'pop.RData'))
+load(file.path(path.dat, 'pop.Rdata'))
 sim.cM <- cumsum(probRec[[chr]]) * 100
 
 ## ----check-deterministic------------------------------------------------------
 load(file.path(path.res, paste0('hsphase_output_chr', chr, '.Rdata')))
-hsphase.cM <- c(0, cumsum(hap$probRec)) * 100
+hsphase.cM <- hap$gen
 
 ## ----plot-3-------------------------------------------------------------------
 par(mar=c(5.1, 4.1, 4.1, 9.1), xpd = TRUE)

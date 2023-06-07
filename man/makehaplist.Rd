@@ -15,7 +15,7 @@ per sire, 1. columns contains sire ID}
 \item{nmin}{scalar, minimum number of progeny required, default 1}
 }
 \value{
-hap list (LEN 2) of lists. For each sire:
+list (LEN 2) of lists. For each sire:
 \describe{
   \item{\code{famID}}{list (LEN N) of vectors (LEN n.progeny) of progeny
    indices relating to lines in genotype matrix}

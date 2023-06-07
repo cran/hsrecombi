@@ -6,7 +6,7 @@
 #' @param hapSire matrix (DIM 2N x p + 1) of sire haplotype at p SNPs; 2 lines
 #'  per sire, 1. columns contains sire ID
 #' @param nmin scalar, minimum number of progeny required, default 1
-#' @return hap list (LEN 2) of lists. For each sire:
+#' @return list (LEN 2) of lists. For each sire:
 #' \describe{
 #'   \item{\code{famID}}{list (LEN N) of vectors (LEN n.progeny) of progeny
 #'    indices relating to lines in genotype matrix}
@@ -43,8 +43,8 @@ makehaplist <- function(daughterSire, hapSire, nmin = 1){
 #'   package \code{hsphase}.
 #' @param sireID vector (LEN N) of IDs of all sires
 #' @param daughterSire vector (LEN n) of sire ID for each progeny
-#' @param genotype.chr matrix (DIM n x p) of progeny genotypes on a single
-#'   chromosome with p SNPs
+#' @param genotype.chr matrix (DIM n x p) of progeny genotypes (0, 1, 2) on a
+#'   single chromosome with p SNPs; 9 indicates missing genotype
 #' @param nmin scalar, minimum required number of progeny for proper imputation,
 #'   default 30
 #' @param exclude vector (LEN < p) of SNP indices to be excluded from analysis
@@ -96,7 +96,7 @@ makehap <- function(sireID, daughterSire, genotype.chr, nmin = 30, exclude = NUL
 }
 
 
-#' @title Make list of imputed haplotypes and recombination rate
+#' @title Make list of imputed haplotypes and estimate recombination rate
 #' @name makehappm
 #' @description List of sire haplotypes is set up in the format required for
 #'   hsrecombi. Sire haplotypes are imputed from progeny genotypes using R
@@ -104,12 +104,13 @@ makehap <- function(sireID, daughterSire, genotype.chr, nmin = 30, exclude = NUL
 #'   adjacent SNPs from hsphase are reported.
 #' @param sireID vector (LEN N) of IDs of all sires
 #' @param daughterSire vector (LEN n) of sire ID for each progeny
-#' @param genotype.chr matrix (DIM n x p) of progeny genotypes on a single
-#'   chromosome with p SNPs
+#' @param genotype.chr matrix (DIM n x p) of progeny genotypes (0, 1, 2) on a
+#'   single chromosome with p SNPs; 9 indicates missing genotype
 #' @param nmin scalar, minimum required number of progeny for proper imputation,
 #'   default 30
-#' @param exclude vector (LEN < p) of SNP indices to be excluded from analysis
-#' @return hap list (LEN 2) of lists. For each sire:
+#' @param exclude vector (LEN < p) of SNP IDs (for filtering column names of
+#'   \code{genotype.chr)} to be excluded from analysis
+#' @return list (LEN 2) of lists. For each sire:
 #' \describe{
 #'   \item{\code{famID}}{list (LEN N) of vectors (LEN n.progeny) of progeny
 #'    indices relating to lines in genotype matrix}
@@ -119,10 +120,11 @@ makehap <- function(sireID, daughterSire, genotype.chr, nmin = 30, exclude = NUL
 #'    all families between adjacent SNPs}
 #'  \item{numberRec}{list (LEN N) of vectors (LEN n.progeny) of number of
 #'    recombination events per animal}
+#'  \item{gen}{vector (LEN p) of genetic positions of SNPs (in cM)}
 #' }
 #' @examples
 #'   data(targetregion)
-#'   hap <- makehappm(unique(daughterSire), daughterSire, genotype.chr)
+#'   hap <- makehappm(unique(daughterSire), daughterSire, genotype.chr, exclude = paste0('V', 301:310))
 #' @references
 #'  Ferdosi, M., Kinghorn, B., van der Werf, J., Lee, S. & Gondro, C. (2014)
 #'   hsphase: an R package for pedigree reconstruction, detection of
@@ -134,9 +136,10 @@ makehap <- function(sireID, daughterSire, genotype.chr, nmin = 30, exclude = NUL
 #' @export
 makehappm <- function(sireID, daughterSire, genotype.chr, nmin = 30, exclude = NULL){
 
-  if(length(exclude) >= ncol(genotype.chr)) stop("ERROR SNP IDs to be excluded")
   ListFam <- ListHap <- ListPm <- ListRec <- list()
-  genotype.chr[, exclude] <- 9
+
+  coln <- colnames(genotype.chr)
+  genotype.chr <- genotype.chr[, setdiff(coln, exclude)]
 
   for (i in sireID){
     # index of progeny
@@ -163,21 +166,19 @@ makehappm <- function(sireID, daughterSire, genotype.chr, nmin = 30, exclude = N
   }
   big <- rlist::list.rbind(ListPm)
 
-  # revise recrate: estimated recrate between misplaced marker (= NA) and predecessor is added to the successor
+  # estimates of recombination rate
   probs <- c(0, colMeans(big, na.rm = TRUE))
-  if(!is.null(exclude)){
-    for(i in sort(exclude)){
-      if(i < ncol(genotype.chr)) {
-        probs[i + 1] <- probs[i + 1] + probs[i]
-      } else{
-        id <- tail(setdiff(which(!is.na(probs)), i), 1)
-        probs[id] <- probs[id] + probs[i]
-      }
-      probs[i] <- NA
-    }
-  }
 
-  return(list(famID = ListFam, sireHap = ListHap, probRec = probs[-1], numberRec = ListRec))
+  # genetic map positions as cumulative sum of distances between adjacent markers assuming theta ~ Morgan
+  gen.cM <- cumsum(probs) * 100
+
+  # insert NA's at excluded marker positions
+  probRec <- gen <- rep(NA, length(coln))
+  probRec[match(setdiff(coln, exclude), coln)] <- probs
+  gen[match(setdiff(coln, exclude), coln)] <- gen.cM
+  names(gen) <- coln
+
+  return(list(famID = ListFam, sireHap = ListHap, probRec = probRec[-1], numberRec = ListRec, gen = gen))
 }
 
 
@@ -187,10 +188,10 @@ makehappm <- function(sireID, daughterSire, genotype.chr, nmin = 30, exclude = N
 #' @description Determine default start values for Expectation Maximisation (EM)
 #'  algorithm that is used to estimate paternal recombination rate and maternal
 #'  haplotype frequencies
-#' @param Fam1 matrix (DIM n.progeny x 2) of progeny genotypes of genomic family
-#'   with coupling phase sires (1) at SNP pair
-#' @param Fam2 matrix (DIM n.progeny x 2) of progeny genotypes of genomic family
-#'   with repulsion phase sires (2) at SNP pair
+#' @param Fam1 matrix (DIM n.progeny x 2) of progeny genotypes (0, 1, 2) of
+#'  genomic family with coupling phase sires (1) at SNP pair
+#' @param Fam2 matrix (DIM n.progeny x 2) of progeny genotypes (0, 1, 2) of
+#'   genomic family with repulsion phase sires (2) at SNP pair
 #' @param Dd maternal LD, default 0
 #' @param prec minimum accepted start value for fAA, fAB, fBA; default
 #'  \code{1e-6}
@@ -286,7 +287,7 @@ startvalue <- function(Fam1, Fam2, Dd = 0, prec = 1e-6){
 #'   ### make list for paternal half-sib families
 #'   hap <- makehaplist(daughterSire, hapSire)
 #'   ### parameter estimates on a chromosome
-#'   res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
+#'   res <- hsrecombi(hap, genotype.chr)
 #'   ### post-processing to achieve final and valid set of estimates
 #'   final <- editraw(res, map.chr)
 #' @importFrom dplyr select starts_with
@@ -294,7 +295,7 @@ startvalue <- function(Fam1, Fam2, Dd = 0, prec = 1e-6){
 #' @export
 editraw <- function(Roh, map1){
 
-  jointset <- rbindlist(Roh)
+  jointset <- rbindlist(Roh, fill = T)
 
   ## 1: final estimate for non-critical SNPs based on loglik
   idx1 <- which(jointset$critical == 0)
@@ -379,20 +380,26 @@ editraw <- function(Roh, map1){
 #' @param final table of results produced by \code{editraw} with pairwise
 #'   estimates of recombination rate between p SNPs within chromosome; minimum
 #'   required data frame with columns \code{SNP1}, \code{SNP2} and \code{theta}
+#' @param map1 data.frame containing information on physical map, at least:
+#' \describe{
+#'  \item{\code{SNP}}{SNP ID}
+#'  \item{\code{locus_Mb}}{physical position in Mbp of SNP on chromosomes}
+#'  \item{\code{Chr}}{chromosome of SNP}
+#' }
 #' @param win optional value for window size; default value 30
 #' @param quant optional value; default value 0.99, see details
-#' @return vector of SNP indices for further verification
+#' @return vector of SNP IDs for further verification
 #' @examples
 #'   ### test data
 #'   data(targetregion)
 #'   ### make list for paternal half-sib families
 #'   hap <- makehaplist(daughterSire, hapSire)
 #'   ### parameter estimates on a chromosome
-#'   res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
+#'   res <- hsrecombi(hap, genotype.chr)
 #'   ### post-processing to achieve final and valid set of estimates
 #'   final <- editraw(res, map.chr)
 #'   ### check for candidates of misplacement
-#'   snp <- checkCandidates(final)
+#'   snp <- checkCandidates(final, map.chr)
 #' @references
 #'   Hampel, A., Teuscher, F., Gomez-Raya, L., Doschoris, M. & Wittenburg, D.
 #'    (2018) Estimation of recombination rate and maternal linkage
@@ -400,19 +407,23 @@ editraw <- function(Roh, map1){
 #'    \doi{10.3389/fgene.2018.00186}
 #' @importFrom stats quantile
 #' @export
-checkCandidates <- function(final, win = 30, quant = 0.99){
-  p <- max(final$SNP2)
-  meanval <- c()
-  for (i in min(final$SNP1):(p - win)){
-    meanval[i] <- mean(final$theta[(final$SNP1 == i) & (final$SNP2 <= i + win)])
+checkCandidates <- function(final, map1, win = 30, quant = 0.99){
+  final$ID1 <- match(final$SNP1, map1$SNP)
+  final$ID2 <- match(final$SNP2, map1$SNP)
+  p <- max(final$ID2)
+  if(p <= win) stop('ERROR total SNP number')
+
+  meanval <- rep(NA, nrow(map1))
+  for (i in 1:(p - win)){
+    meanval[i] <- mean(final$theta[(final$ID1 == i) & (final$ID2 <= i + win)])
   }
 
   for (i in (p - win + 1):p) {
-    meanval[i] <- mean(final$theta[(final$SNP1 >= i - win) & (final$SNP2 == i)])
+    meanval[i] <- mean(final$theta[(final$ID1 >= i - win) & (final$ID2 == i)])
   }
 
   q <- quantile(meanval, prob = quant, na.rm = T)
-  cand <- which(meanval >= q)
+  cand <- map1$SNP[which(meanval >= q)]
 
   return(cand)
 }

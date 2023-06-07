@@ -53,7 +53,7 @@ Process raw results from \code{hsrecombi}, decide which out of
   ### make list for paternal half-sib families
   hap <- makehaplist(daughterSire, hapSire)
   ### parameter estimates on a chromosome
-  res <- hsrecombi(hap, genotype.chr, map.chr$SNP)
+  res <- hsrecombi(hap, genotype.chr)
   ### post-processing to achieve final and valid set of estimates
   final <- editraw(res, map.chr)
 }
